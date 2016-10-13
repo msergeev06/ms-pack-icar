@@ -1,0 +1,48 @@
+a {
+	text-decoration: none;
+	color: dodgerblue;
+}
+a:hover {
+	text-decoration: underline;
+	color: dodgerblue;
+}
+a.selected {
+	text-decoration: underline !important;
+}
+
+.car_add {
+	width: 100%;
+	border: 0;
+}
+.error {
+	color: darkred;
+}
+.ok {
+	color: darkgreen;
+}
+
+h1,h2,h3,h4,h5 {
+	margin: auto;
+	text-align: center;
+}
+table {
+	border: 0;
+}
+.carinfo {
+	display: block;
+	width: 100%;
+	background-color: #DDDDDD;
+	padding: 5px;
+	margin-bottom: 20px;
+}
+.blockcar {
+	display: block;
+	width: 250px;
+	margin: 10px;
+	padding: 5px;
+	border: solid #000000 1px;
+}
+.cardetailinfo {
+	width: 100%;
+
+}
