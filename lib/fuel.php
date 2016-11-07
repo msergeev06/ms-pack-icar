@@ -1,4 +1,13 @@
 <?php
+/**
+ * MSergeev\Packages\Icar\Lib\Fuel
+ * Расходы на топливо
+ *
+ * @package MSergeev\Packages\Icar
+ * @subpackage Lib
+ * @author Mikhail Sergeev <msergeev06@gmail.com>
+ * @copyright 2016 Mikhail Sergeev
+ */
 
 namespace MSergeev\Packages\Icar\Lib;
 
@@ -6,7 +15,12 @@ use MSergeev\Core\Entity\Query;
 use MSergeev\Core\Exception;
 use MSergeev\Packages\Icar\Tables;
 use MSergeev\Core\Lib as CoreLib;
+use MSergeev\Core\Lib\Loc;
 
+/**
+ * Class Fuel
+ * @package MSergeev\Packages\Icar\Lib
+ */
 class Fuel
 {
 	//protected static $bRecalculateExpence = false;
@@ -14,9 +28,11 @@ class Fuel
 	/**
 	 * Возвращает сумму расходов на топливо
 	 *
-	 * @param int   $carID
+	 * @api
 	 *
-	 * @return int
+	 * @param int|null  $carID  ID автомобиля, если null - будет выбран автомобиль по-умолчанию
+	 *
+	 * @return float
 	 */
 	public static function getTotalFuelCosts ($carID=null)
 	{
@@ -26,15 +42,13 @@ class Fuel
 			$carID = MyCar::getDefaultCarID();
 		}
 
-		$sqlHelper = new CoreLib\SqlHelper();
 		$fuelTable = Tables\FuelTable::getTableName();
+		$sqlHelper = new CoreLib\SqlHelper($fuelTable);
 		$query = new Query('select');
 		$sql = "SELECT\n\t"
-			."SUM(".$sqlHelper->wrapQuotes($fuelTable).'.'
-			.$sqlHelper->wrapQuotes('SUM').") AS SUMM\n"
-			."FROM\n\t".$sqlHelper->wrapQuotes($fuelTable)."\n"
-			."WHERE\n\t".$sqlHelper->wrapQuotes($fuelTable).'.'
-			.$sqlHelper->wrapQuotes('MY_CAR_ID')." = ".$carID;
+			.$sqlHelper->getSumFunction('SUM','SUMM')."\n"
+			."FROM\n\t".$sqlHelper->wrapTableQuotes()."\n"
+			."WHERE\n\t".$sqlHelper->wrapFieldQuotes('MY_CAR_ID')." = ".$carID;
 		$query->setQueryBuildParts($sql);
 		$res = $query->exec();
 		if ($ar_res = $res->fetch())
@@ -49,9 +63,11 @@ class Fuel
 	/**
 	 * Возвращает отформатированную сумму расходов на топливо
 	 *
-	 * @param int $carID
+	 * @api
 	 *
-	 * @return string
+	 * @param int|null $carID ID автомобиля. Если null - будет выбран автомобиль по-умолчанию
+	 *
+	 * @return string   Сумма расходов, отформатированная в денежном формате
 	 */
 	public static function getTotalFuelCostsFormatted($carID=null)
 	{
@@ -61,7 +77,9 @@ class Fuel
 	/**
 	 * Возвращает средний расход топлива
 	 *
-	 * @param int $carID
+	 * @api
+	 *
+	 * @param int|null $carID   ID автомобиля. Если null - будет выбран автомобиль по-умолчанию
 	 *
 	 * @return float
 	 */
@@ -98,7 +116,9 @@ class Fuel
 	/**
 	 * Возвращает количество израсходованного топлива
 	 *
-	 * @param int   $carID
+	 * @api
+	 *
+	 * @param int|null  $carID  ID автомобиля. Если null - будет выбран автомобиль по-умолчанию
 	 *
 	 * @return float
 	 */
@@ -111,15 +131,13 @@ class Fuel
 
 		$total = 0;
 
-		$sqlHelper = new CoreLib\SqlHelper();
 		$fuelTable = Tables\FuelTable::getTableName();
+		$sqlHelper = new CoreLib\SqlHelper($fuelTable);
 		$query = new Query('select');
 		$sql = "SELECT\n\t"
-			."SUM(".$sqlHelper->wrapQuotes($fuelTable).'.'
-			.$sqlHelper->wrapQuotes('LITER').") AS SUMM\n"
-			."FROM\n\t".$sqlHelper->wrapQuotes($fuelTable)."\n"
-			."WHERE\n\t".$sqlHelper->wrapQuotes($fuelTable).'.'
-			.$sqlHelper->wrapQuotes('MY_CAR_ID')." = ".$carID;
+			.$sqlHelper->getSumFunction('LITER','SUMM')."\n"
+			."FROM\n\t".$sqlHelper->wrapTableQuotes()."\n"
+			."WHERE\n\t".$sqlHelper->wrapFieldQuotes('MY_CAR_ID')." = ".$carID;
 		$query->setQueryBuildParts($sql);
 		$res = $query->exec();
 		if ($ar_res = $res->fetch())
@@ -131,9 +149,11 @@ class Fuel
 	}
 
 	/**
-	 * Подготавливает данные из формы для добавления в БД
+	 * Подготавливает данные о расходах на топливо из формы для добавления в БД
 	 *
-	 * @param array $post
+	 * @api
+	 *
+	 * @param array $post Массив POST
 	 *
 	 * @return bool
 	 */
@@ -246,6 +266,15 @@ class Fuel
 		return static::addFuel($arData);
 	}
 
+	/**
+	 * Подготавливает данные о расходах на топливо из формы для обновления в DB
+	 *
+	 * @api
+	 *
+	 * @param array $post Массив POST
+	 *
+	 * @return bool
+	 */
 	public static function updateFuelFromPost ($post=null)
 	{
 		try
@@ -399,6 +428,16 @@ class Fuel
 		}
 	}
 
+	/**
+	 * Удаляет запись расходов на топливо
+	 *
+	 * @api
+	 *
+	 * @param int $fuelID ID записи расходов
+	 *
+	 * @return bool
+	 * @throws Exception\ArgumentOutOfRangeException
+	 */
 	public static function deleteFuel ($fuelID=null)
 	{
 		try
@@ -418,7 +457,13 @@ class Fuel
 		}
 
 		$query = new Query('delete');
-		$query->setDeleteParams($fuelID,true,Tables\FuelTable::getTableName(),Tables\FuelTable::getMapArray(),Tables\FuelTable::getTableLinks());
+		$query->setDeleteParams(
+			$fuelID,
+			true,
+			Tables\FuelTable::getTableName(),
+			Tables\FuelTable::getMapArray(),
+			Tables\FuelTable::getTableLinks()
+		);
 		$res = $query->exec();
 		if ($res->getResult())
 		{
@@ -435,9 +480,13 @@ class Fuel
 	/**
 	 * Возвращает <select> с марками топлива
 	 *
-	 * @param string $strBoxName
-	 * @param string $strSelectedVal
-	 * @param string $field1
+	 * @api
+	 *
+	 * @param string $strBoxName        Навзание тега <select>
+	 * @param string $strSelectedVal    Значение option по-умолчанию
+	 * @param string $field1            Прочие параметры тега <select>
+	 *
+	 * @use SelectBox() Функция отображения тега <select>
 	 *
 	 * @return string
 	 */
@@ -454,14 +503,27 @@ class Fuel
 				);
 			}
 
-			return SelectBox ($strBoxName, $arValues, '--- Выбрать ---', $strSelectedVal, $field1);
+			return SelectBox ($strBoxName, $arValues, Loc::getPackMessage('icar','all_select_default'), $strSelectedVal, $field1);
 		}
 		else
 		{
-			return '[Нет марок топлива]';
+			return '['.Loc::getPackMessage('icar','fuel_no_mark').']';
 		}
 	}
 
+	/**
+	 * Возвращает массив со списком расходов на топливо
+	 *
+	 * @api
+	 *
+	 * @param int|null  $carID  ID автомобиля. Если null - будет выбран автомобиль по-умолчанию
+	 * @param int|null  $getID  ID записи расхода на топливо. Если указано, вернется информация
+	 *                          по 1 записи
+	 * @param int       $limit  Коливество записей в выводе
+	 * @param int       $offset С какой записи по порядки начинать вывод
+	 *
+	 * @return array|bool
+	 */
 	public static function getFuelList ($carID=null,$getID=null,$limit=0,$offset=0)
 	{
 		if (is_null($carID))
@@ -523,26 +585,19 @@ class Fuel
 		return $arRes;
 	}
 
-
-
-/*	public static function getFuelNumRows ($carID=null)
-	{
-		if (is_null($carID))
-		{
-			$carID = MyCar::getDefaultCarID();
-		}
-
-		$helper = new CoreLib\SqlHelper();
-		$sql = "SELECT\n\t".$helper->wrapQuotes('ID')."\nFROM\n\t"
-			.$helper->wrapQuotes(Tables\FuelTable::getTableName())."\nWHERE\n\t"
-			.$helper->wrapQuotes('MY_CAR_ID')." = ".$carID;
-		$query = new Query('select');
-		$query->setQueryBuildParts($sql);
-		$res = $query->exec();
-
-		return $res->getNumRows();
-	}*/
-
+	/**
+	 * Возвращает таблицу с данными о расходах на топливо
+	 *
+	 * @api
+	 *
+	 * @param int|null      $carID  ID автомобиля. Если null - будет выбран автомобиль по-умолчанию
+	 * @param null|string   $div    id тега <div>
+	 * @param bool          $first  ???
+	 *
+	 * @use MSergeev\Core\Lib\Webix
+	 *
+	 * @return bool|void
+	 */
 	public static function showListTable ($carID = null, $div = null, $first=false)
 	{
 		if (is_null($carID))
@@ -576,7 +631,8 @@ class Fuel
 					'point_name' => $list['POINT_NAME'],
 					'point_latitude' => $list['POINT_LATITUDE'],
 					'point_longitude' => $list['POINT_LONGITUDE'],
-					'yandex_map' => "<img src='https://static-maps.yandex.ru/1.x/?l=map&z=12&size=600,450&pt=".$list['POINT_LONGITUDE'].",".$list['POINT_LATITUDE'].",pm2blm'>",
+					'yandex_map' => "<img src='https://static-maps.yandex.ru/1.x/?l=map&z=12&size=600,450&pt="
+						.$list['POINT_LONGITUDE'].",".$list['POINT_LATITUDE'].",pm2blm'>",
 					'point_type' => $list['POINT_TYPE_NAME'],
 					'info' => (strlen($list['INFO'])>0)?"<img src='".$imgSrcPath."info.png'>":"",
 					'comment' => $list['INFO'],
@@ -597,7 +653,7 @@ class Fuel
 				'pager' => array('container'=>'fuelPager'),
 				'columns' => array(
 					$webixHelper->getColumnArray('DATE',array(
-						'footer'=>'={text:"Итого:", colspan:3}'
+						'footer'=>'={text:"'.Loc::getPackMessage('icar','all_summ').':", colspan:3}'
 					)),
 					$webixHelper->getColumnArray('ODO'),
 					$webixHelper->getColumnArray('FUELMARK_NAME'),
@@ -618,11 +674,12 @@ class Fuel
 				'data' => $arDatas
 			);
 
-			return CoreLib\Webix::showDataTable($arData);
+			CoreLib\Webix::showDataTable($arData);
+			return true;
 		}
 		else
 		{
-			echo 'Нет данных о заправках';
+			echo Loc::getPackMessage('icar','fuel_no_data');
 			return false;
 		}
 	}
@@ -631,11 +688,11 @@ class Fuel
 	/**
 	 * Возвращает массив всех марок топлива, по умолчанию выбирает только активные
 	 *
-	 * @param bool $bActive
+	 * @param bool $bActive Флаг, выбирать активные (по-умолчанию) или все
 	 *
 	 * @return array|bool
 	 */
-	protected static function getFuelMarksList($bActive=true)
+	private static function getFuelMarksList($bActive=true)
 	{
 		$arList = array();
 		if ($bActive)
@@ -657,11 +714,11 @@ class Fuel
 	/**
 	 * Добавляет данные о заправки в БД
 	 *
-	 * @param array $arData
+	 * @param array $arData Массив с обработанными данными о заправках
 	 *
 	 * @return bool|int
 	 */
-	protected static function addFuel ($arData=null)
+	private static function addFuel ($arData=null)
 	{
 		try
 		{
@@ -705,9 +762,9 @@ class Fuel
 	/**
 	 * Функция пресчитывает расход топлива для всех записей, начиная с заданной
 	 *
-	 * @param array $arData
+	 * @param array $arData Массив обработанных данных о заправках
 	 */
-	protected static function recalculateExpence ($arData=null)
+	private static function recalculateExpence ($arData=null)
 	{
 		try
 		{
@@ -849,12 +906,12 @@ class Fuel
 	/**
 	 * Обновляет значение расхода для указанной записи
 	 *
-	 * @param int   $primary
-	 * @param array $arUpdate
+	 * @param int   $primary    Значение PRIMARY для записи
+	 * @param array $arUpdate   Массив обновляемых значений
 	 *
 	 * @return bool
 	 */
-	protected static function updateExpence ($primary=null,$arUpdate=null)
+	private static function updateExpence ($primary=null,$arUpdate=null)
 	{
 		try
 		{
@@ -883,7 +940,12 @@ class Fuel
 		}
 
 		$query = new Query('update');
-		$query->setUpdateParams($arUpdate,$primary,Tables\FuelTable::getTableName(),Tables\FuelTable::getMapArray());
+		$query->setUpdateParams(
+			$arUpdate,
+			$primary,
+			Tables\FuelTable::getTableName(),
+			Tables\FuelTable::getMapArray()
+		);
 		$res = $query->exec();
 		if ($res->getResult())
 		{
@@ -898,12 +960,14 @@ class Fuel
 	/**
 	 * Сохраняет последнюю использованную марку топлива для автомобиля
 	 *
+	 * @api
+	 *
 	 * @param int   $fuelMark   ID марки топлива
 	 * @param int   $carID      ID автомобиля
 	 *
 	 * @return bool
 	 */
-	protected static function setLastUseFuelMark ($fuelMark=null,$carID=null)
+	public static function setLastUseFuelMark ($fuelMark=null,$carID=null)
 	{
 		try
 		{

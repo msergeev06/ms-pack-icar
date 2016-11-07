@@ -3,14 +3,13 @@ use MSergeev\Core\Lib;
 $path = Lib\Tools::getSitePath(Lib\Loader::getPublic("icar"));
 $imgPath = Lib\Tools::getSitePath(Lib\Loader::getTemplate("icar")."images/");
 $imgWidth = $imgHeight = 50;
-Lib\Loc::setModuleMessages('icar');
 ?>
 <table class="top_menu">
 	<tr>
 		<td>
 			<div style="text-align: center;">
 				<a href="<?=$path?>" id="main" class="top_menu_link">
-					<img src="<?=$imgPath?>main.png" width="<?=$imgWidth?>" height="<?=$imgHeight?>" border="0" alt="Главная">
+					<img src="<?=$imgPath?>main.png" width="<?=$imgWidth?>" height="<?=$imgHeight?>" border="0" alt="<?=Lib\Loc::getMessage('ms_icar_menu_main')?>">
 					<br><?=Lib\Loc::getMessage('ms_icar_menu_main')?>
 				</a>
 			</div>
@@ -18,7 +17,7 @@ Lib\Loc::setModuleMessages('icar');
 		<td>
 			<div style="text-align: center;">
 				<a href="<?=$path?>my_cars/" id="my_cars" class="top_menu_link">
-					<img src="<?=$imgPath?>car.png" width="<?=$imgWidth?>" height="<?=$imgHeight?>" border="0" alt="Мои машины">
+					<img src="<?=$imgPath?>car.png" width="<?=$imgWidth?>" height="<?=$imgHeight?>" border="0" alt="<?=Lib\Loc::getMessage('ms_icar_menu_cars')?>">
 					<br><?=Lib\Loc::getMessage('ms_icar_menu_cars')?>
 				</a>
 			</div>
@@ -26,7 +25,7 @@ Lib\Loc::setModuleMessages('icar');
 		<td>
 			<div style="text-align: center;">
 				<a href="<?=$path?>mileage/" id="mileage" class="top_menu_link">
-					<img src="<?=$imgPath?>route.png" width="<?=$imgWidth?>" height="<?=$imgHeight?>" border="0" alt="Пробег">
+					<img src="<?=$imgPath?>route.png" width="<?=$imgWidth?>" height="<?=$imgHeight?>" border="0" alt="<?=Lib\Loc::getMessage('ms_icar_menu_mileage')?>">
 					<br><?=Lib\Loc::getMessage('ms_icar_menu_mileage')?>
 				</a>
 			</div>
@@ -34,7 +33,7 @@ Lib\Loc::setModuleMessages('icar');
 		<td>
 			<div style="text-align: center;">
 				<a href="<?=$path?>ts/" id="ts" class="top_menu_link">
-					<img src="<?=$imgPath?>ts.jpg" width="<?=$imgWidth?>" height="<?=$imgHeight?>" border="0" alt="ТО">
+					<img src="<?=$imgPath?>ts.jpg" width="<?=$imgWidth?>" height="<?=$imgHeight?>" border="0" alt="<?=Lib\Loc::getMessage('ms_icar_menu_ts')?>">
 					<br><?=Lib\Loc::getMessage('ms_icar_menu_ts')?>
 				</a>
 			</div>
@@ -42,15 +41,15 @@ Lib\Loc::setModuleMessages('icar');
 		<td>
 			<div style="text-align: center;">
 				<a href="<?=$path?>fuel/" id="fuel" class="top_menu_link">
-					<img src="<?=$imgPath?>fuel.jpg" width="<?=$imgWidth?>" height="<?=$imgHeight?>" border="0" alt="Топливо">
+					<img src="<?=$imgPath?>fuel.jpg" width="<?=$imgWidth?>" height="<?=$imgHeight?>" border="0" alt="<?=Lib\Loc::getMessage('ms_icar_menu_fuel')?>">
 					<br><?=Lib\Loc::getMessage('ms_icar_menu_fuel')?>
 				</a>
 			</div>
 		</td>
 		<td>
 			<div style="text-align: center;">
-				<a href="<?=$path?>rapair_parts/" id="rapair_parts" class="top_menu_link">
-					<img src="<?=$imgPath?>repair_parts.jpg" width="<?=$imgWidth?>" height="<?=$imgHeight?>" border="0" alt="Запчасти">
+				<a href="<?=$path?>repair_parts/" id="repair_parts" class="top_menu_link">
+					<img src="<?=$imgPath?>repair_parts.jpg" width="<?=$imgWidth?>" height="<?=$imgHeight?>" border="0" alt="<?=Lib\Loc::getMessage('ms_icar_menu_repairparts')?>">
 					<br><?=Lib\Loc::getMessage('ms_icar_menu_repairparts')?>
 				</a>
 			</div>
@@ -58,7 +57,7 @@ Lib\Loc::setModuleMessages('icar');
 		<td>
 			<div style="text-align: center;">
 				<a href="<?=$path?>repair/" id="repair" class="top_menu_link">
-					<img src="<?=$imgPath?>repair.jpg" width="<?=$imgWidth?>" height="<?=$imgHeight?>" border="0" alt="Ремонт">
+					<img src="<?=$imgPath?>repair.jpg" width="<?=$imgWidth?>" height="<?=$imgHeight?>" border="0" alt="<?=Lib\Loc::getMessage('ms_icar_menu_repair')?>">
 					<br><?=Lib\Loc::getMessage('ms_icar_menu_repair')?>
 				</a>
 			</div>
@@ -66,7 +65,7 @@ Lib\Loc::setModuleMessages('icar');
 		<td>
 			<div style="text-align: center;">
 				<a href="<?=$path?>additional_parts/" id="additional_parts" class="top_menu_link">
-					<img src="<?=$imgPath?>add_parts.png" width="<?=$imgWidth?>" height="<?=$imgHeight?>" border="0" alt="Дополнительное оборудование">
+					<img src="<?=$imgPath?>add_parts.png" width="<?=$imgWidth?>" height="<?=$imgHeight?>" border="0" alt="<?=Lib\Loc::getMessage('ms_icar_menu_parts')?>">
 					<br><?=Lib\Loc::getMessage('ms_icar_menu_parts')?>
 				</a>
 			</div>
@@ -74,7 +73,7 @@ Lib\Loc::setModuleMessages('icar');
 		<td>
 			<div style="text-align: center;">
 				<a href="<?=$path?>credit/" id="credit" class="top_menu_link">
-					<img src="<?=$imgPath?>credit.jpg" width="<?=$imgWidth?>" height="<?=$imgHeight?>" border="0" alt="Кредит">
+					<img src="<?=$imgPath?>credit.jpg" width="<?=$imgWidth?>" height="<?=$imgHeight?>" border="0" alt="<?=Lib\Loc::getMessage('ms_icar_menu_credit')?>">
 					<br><?=Lib\Loc::getMessage('ms_icar_menu_credit')?>
 				</a>
 			</div>
@@ -82,7 +81,7 @@ Lib\Loc::setModuleMessages('icar');
 		<td>
 			<div style="text-align: center;">
 				<a href="<?=$path?>other/" id="other" class="top_menu_link">
-					<img src="<?=$imgPath?>other.jpg" width="<?=$imgWidth?>" height="<?=$imgHeight?>" border="0" alt="Прочее">
+					<img src="<?=$imgPath?>other.jpg" width="<?=$imgWidth?>" height="<?=$imgHeight?>" border="0" alt="<?=Lib\Loc::getMessage('ms_icar_menu_other')?>">
 					<br><?=Lib\Loc::getMessage('ms_icar_menu_other')?>
 				</a>
 			</div>
@@ -90,7 +89,7 @@ Lib\Loc::setModuleMessages('icar');
 		<td>
 			<div style="text-align: center;">
 				<a href="<?=$path?>accident/" id="accident" class="top_menu_link">
-					<img src="<?=$imgPath?>accident.jpg" width="<?=$imgWidth?>" height="<?=$imgHeight?>" border="0" alt="ДТП">
+					<img src="<?=$imgPath?>accident.jpg" width="<?=$imgWidth?>" height="<?=$imgHeight?>" border="0" alt="<?=Lib\Loc::getMessage('ms_icar_menu_accident')?>">
 					<br><?=Lib\Loc::getMessage('ms_icar_menu_accident')?>
 				</a>
 			</div>
@@ -98,7 +97,7 @@ Lib\Loc::setModuleMessages('icar');
 		<td>
 			<div style="text-align: center;">
 				<a href="<?=$path?>income/" id="income" class="top_menu_link">
-					<img src="<?=$imgPath?>income.jpg" width="<?=$imgWidth?>" height="<?=$imgHeight?>" border="0" alt="Доход">
+					<img src="<?=$imgPath?>income.jpg" width="<?=$imgWidth?>" height="<?=$imgHeight?>" border="0" alt="<?=Lib\Loc::getMessage('ms_icar_menu_income')?>">
 					<br><?=Lib\Loc::getMessage('ms_icar_menu_income')?>
 				</a>
 			</div>
@@ -106,7 +105,7 @@ Lib\Loc::setModuleMessages('icar');
 		<td>
 			<div style="text-align: center;">
 				<a href="<?=$path?>points/" id="points" class="top_menu_link">
-					<img src="<?=$imgPath?>points.jpg" width="<?=$imgWidth?>" height="<?=$imgHeight?>" border="0" alt="Путевые точки">
+					<img src="<?=$imgPath?>points.jpg" width="<?=$imgWidth?>" height="<?=$imgHeight?>" border="0" alt="<?=Lib\Loc::getMessage('ms_icar_menu_points')?>">
 					<br><?=Lib\Loc::getMessage('ms_icar_menu_points')?>
 				</a>
 			</div>

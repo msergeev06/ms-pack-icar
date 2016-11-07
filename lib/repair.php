@@ -1,4 +1,13 @@
 <?php
+/**
+ * MSergeev\Packages\Icar\Lib\Repair
+ * Ремонт
+ *
+ * @package MSergeev\Packages\Icar
+ * @subpackage Lib
+ * @author Mikhail Sergeev <msergeev06@gmail.com>
+ * @copyright 2016 Mikhail Sergeev
+ */
 
 namespace MSergeev\Packages\Icar\Lib;
 
@@ -6,8 +15,12 @@ use MSergeev\Packages\Icar\Tables\RepairTable;
 
 class Repair
 {
-	public static function showSelectRepairList ($carID, $strBoxName, $strDetText='Не выбрано', $strSelectedVal = "null", $field1="class=\"repairlistselect\"")
+	public static function showSelectRepairList ($carID, $strBoxName, $strDetText='', $strSelectedVal = "null", $field1="class=\"repairlistselect\"")
 	{
+		if ($strDetText=='')
+		{
+			$strDetText='Не выбрано';
+		}
 		$arRes = self::getRepairList($carID);
 		if ($arRes)
 		{
@@ -90,5 +103,20 @@ class Repair
 		$arRes = RepairTable::getList($arList);
 
 		return $arRes;
+	}
+
+	public static function getTotalRepairCostsFormatted ($carID=null)
+	{
+		if (is_null($carID))
+		{
+			$carID = MyCar::getDefaultCarID();
+		}
+
+		return Main::moneyFormat(self::getTotalRepairCosts($carID));
+	}
+
+	private static function getTotalRepairCosts ($carID=null)
+	{
+		return 0;
 	}
 }

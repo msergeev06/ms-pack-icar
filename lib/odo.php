@@ -1,17 +1,34 @@
 <?php
+/**
+ * MSergeev\Packages\Icar\Lib\Odo
+ * Пробег и маршруты
+ *
+ * @package MSergeev\Packages\Icar
+ * @subpackage Lib
+ * @author Mikhail Sergeev <msergeev06@gmail.com>
+ * @copyright 2016 Mikhail Sergeev
+ */
 
 namespace MSergeev\Packages\Icar\Lib;
 
 use MSergeev\Core\Exception;
 use MSergeev\Packages\Icar\Tables;
 use MSergeev\Core\Entity\Query;
+use MSergeev\Core\Lib\Loc;
+use MSergeev\Core\Lib\DateHelper;
 
+/**
+ * Class Odo
+ * @package MSergeev\Packages\Icar\Lib
+ */
 class Odo
 {
 	/**
-	 * Функция обрабатывает данные о маршруте из формы, для сохранении в БЛ
+	 * Функция обрабатывает данные о маршруте из формы, для сохранении в БД
 	 *
-	 * @param null $post
+	 * @api
+	 *
+	 * @param array $post Массив $_POST с данными
 	 *
 	 * @return bool|int
 	 */
@@ -119,6 +136,10 @@ class Odo
 	/**
 	 * Возвращает максимальное значение одометра на основе маршрутов
 	 *
+	 * TODO: Переписать запрос
+	 *
+	 * @api
+	 *
 	 * @param int $carID
 	 *
 	 * @return int
@@ -131,14 +152,14 @@ class Odo
 		}
 
 		$arRes = Tables\RoutsTable::getList(array(
-			                                    'select' => array('ODO'),
-			                                    'filter' => array(
-				                                    'MY_CAR_ID' => intval($carID),
-				                                    '>ODO' => 0
-			                                    ),
-			                                    'order' => array('DATE'=>'DESC'),
-			                                    'limit' => 1
-		                                    ));
+			'select' => array('ODO'),
+			'filter' => array(
+				'MY_CAR_ID' => intval($carID),
+				'>ODO' => 0
+			),
+			'order' => array('DATE'=>'DESC'),
+			'limit' => 1
+		));
 		if ($arRes)
 		{
 			return $arRes[0]['ODO'];
@@ -164,11 +185,11 @@ class Odo
 	{
 		if ($xTitle=='')
 		{
-			$xTitle="Дата";
+			$xTitle=Loc::getPackMessage('icar','all_date');
 		}
 		if ($yTitle=='')
 		{
-			$yTitle="Километраж (км.)";
+			$yTitle=Loc::getPackMessage('icar','all_odo_km');
 		}
 		if (is_null($carID))
 		{
@@ -197,7 +218,9 @@ class Odo
 			$to .= '.'.$nowMonth.'.'.$nowYear;
 		}
 
-		$title = 'Данные за период: с '.$from.' по '.$to;
+		$title = Loc::getPackMessage('icar','all_data_period').': '
+			.Loc::getPackMessage('icar','all_from').' '.$from.' '
+			.Loc::getPackMessage('icar','all_to').' '.$to;
 
 		$arRes = Tables\OdoTable::getList(array(
 			'select' => array('DATE','ODO'),
@@ -209,7 +232,7 @@ class Odo
 			'order' => array('DATE'=>'ASC')
 		));
 		if (!$arRes) {
-			return 'Нет данных за указанный период';
+			return Loc::getPackMessage('icar','all_period_no_data');
 		}
 		else
 		{
@@ -251,6 +274,8 @@ class Odo
 
 	/**
 	 * Функция добавляет новый машрут и возвращает ID записи, либо false
+	 *
+	 * @api
 	 *
 	 * @param array $arData
 	 *
@@ -305,6 +330,8 @@ class Odo
 
 	/**
 	 * Функция высчитывает данные о пройденном расстоянии от выбранной даты или за все время
+	 *
+	 * @api
 	 *
 	 * @param int $carID
 	 * @param string $date

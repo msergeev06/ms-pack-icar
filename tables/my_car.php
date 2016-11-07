@@ -52,7 +52,7 @@ class MyCarTable extends DataManager {
 				'title' => 'Название автомобиля'
 			)),
 			new Entity\IntegerField ('CAR_BRANDS_ID', array(
-				'link' => 'ms_icar_car_brands.ID',
+				'link' => 'ms_icar_car_brand.ID',
 				'title' => 'ID бренда автомобиля'
 			)),
 			new Entity\IntegerField ('CAR_MODEL_ID', array(

@@ -1,6 +1,7 @@
-<? include_once(__DIR__."/../include/header.php"); MSergeev\Core\Lib\Buffer::setTitle("Мои машины - Редактирование автомобиля");
+<? include_once(__DIR__."/../include/header.php"); MSergeev\Core\Lib\Buffer::setTitle(MSergeev\Core\Lib\Loc::getPackMessage('icar','mycars_my_cars')." - ".MSergeev\Core\Lib\Loc::getPackMessage('icar','mycars_car_edit'));
 
 use \MSergeev\Packages\Icar\Lib;
+use MSergeev\Core\Lib\Loc;
 
 if (!isset($_POST['step']))
 {
@@ -19,117 +20,117 @@ if (!isset($_POST['step']))
 		<input type="hidden" name="car_id" value="<?=$carID?>">
 		<table class="car_add">
 			<tr>
-				<td>Название авто:</td>
+				<td><?=Loc::getPackMessage('icar','mycars_car_name')?>:</td>
 				<td><?= InputType ('text', 'car_name', $arCar['NAME'], '', FALSE, '', 'class="car_name"') ?></td>
 				<td>&nbsp;</td>
 			</tr>
 			<tr>
-				<td>Автомобиль активен:</td>
+				<td><?=Loc::getPackMessage('icar','mycars_car_active')?>:</td>
 				<td><?= SelectBoxBool ('car_active', (($arCar['ACTIVE']) ? 1 : 0)) ?></td>
 				<td>&nbsp;</td>
 			</tr>
 			<tr>
-				<td>Сортировка:</td>
+				<td><?=Loc::getPackMessage('icar','mycars_sort')?>:</td>
 				<td><?= InputType ('text', 'car_sort', $arCar['SORT'], '', FALSE, '', 'class="car_sort"') ?></td>
 				<td>&nbsp;</td>
 			</tr>
 			<tr>
-				<td>Марка авто:</td>
-				<td><?= Lib\CarBrand::getHtmlSelect ($arCar['CAR_BRANDS_ID']) ?></td>
+				<td><?=Loc::getPackMessage('icar','mycars_car_brand')?>:</td>
+				<td><?= Lib\CarBrand::getHtmlSelect ($arCar['BRAND_ID']) ?></td>
 				<td>&nbsp;</td>
 			</tr>
-			<? if ($arCar['CAR_BRANDS_ID'] > 0): ?>
+			<? if ($arCar['BRAND_ID'] > 0): ?>
 				<tr>
-					<td>Выберите модель:</td>
-					<td class="td_model"><?= Lib\CarModel::getHtmlSelect ($arCar['CAR_BRANDS_ID'],
-					                                                      $arCar['CAR_MODEL_ID']) ?></td>
+					<td><?=Loc::getPackMessage('icar','mycars_select_model')?>:</td>
+					<td class="td_model"><?= Lib\CarModel::getHtmlSelect ($arCar['BRAND_ID'],
+					                                                      $arCar['MODEL_ID']) ?></td>
 					<td>&nbsp;</td>
 				</tr>
 			<? else: ?>
 				<tr>
-					<td>Добавьте модель:</td>
+					<td><?=Loc::getPackMessage('icar','mycars_add_model')?>:</td>
 					<td class="td_model"><?= InputType ('text', 'car_model_text', '', '', FALSE, '',
 					                                    'class="car_model_text"') ?></td>
 					<td>&nbsp;</td>
 				</tr>
 			<?endif; ?>
 			<tr>
-				<td>Год выпуска:</td>
+				<td><?=Loc::getPackMessage('icar','mycars_car_year')?>:</td>
 				<td><?= InputType ('text', 'car_year', $arCar['YEAR'], '', FALSE, '', 'class="car_year"') ?></td>
 				<td class="td_year_error error">&nbsp;</td>
 			</tr>
 			<tr>
-				<td>VIN:</td>
+				<td><?=Loc::getPackMessage('icar','mycars_vin')?>:</td>
 				<td><?= InputType ('text', 'car_vin', $arCar['VIN'], '', FALSE, '', 'class="car_vin"') ?></td>
-				<td>Цифры и латинские буквы</td>
+				<td><?=Loc::getPackMessage('icar','mycars_num_and_lat')?></td>
 			</tr>
 			<tr>
-				<td>Гос номер:</td>
+				<td><?=Loc::getPackMessage('icar','mycars_car_number')?>:</td>
 				<td><?= InputType ('text', 'car_number', $arCar['CAR_NUMBER'], '', FALSE, '',
 				                   'class="car_number"') ?></td>
-				<td>Цифры и латинские буквы</td>
+				<td><?=Loc::getPackMessage('icar','mycars_num_and_lat')?></td>
 			</tr>
 			<tr>
-				<td>Объём двигателя:</td>
+				<td><?=Loc::getPackMessage('icar','mycars_engine_capacity')?>:</td>
 				<td><?= InputType ('text', 'car_engine', $arCar['ENGINE_CAPACITY'], '', FALSE, '',
 				                   'class="car_engine"') ?></td>
-				<td>литра</td>
+				<td><?=Loc::getPackMessage('icar','mycars_litra')?></td>
 			</tr>
 			<tr>
-				<td>КПП:</td>
-				<td><?= Lib\CarGearbox::getHtmlSelect ($arCar['CAR_GEARBOX_ID']) ?></td>
+				<td><?=Loc::getPackMessage('icar','mycars_gearbox')?>:</td>
+				<td><?= Lib\CarGearbox::getHtmlSelect ($arCar['GEARBOX_ID']) ?></td>
 				<td>&nbsp;</td>
 			</tr>
 			<tr>
-				<td>Тип кузова:</td>
-				<td><?= Lib\CarBody::getHtmlSelect ($arCar['CAR_BODY_ID']) ?></td>
+				<td><?=Loc::getPackMessage('icar','mycars_body_type')?>:</td>
+				<td><?= Lib\CarBody::getHtmlSelect ($arCar['BODY_ID']) ?></td>
 				<td>&nbsp;</td>
 			</tr>
 			<tr>
-				<td>Интервал прохождения ТО:</td>
+				<td><?=Loc::getPackMessage('icar','mycars_interval_ts')?>:</td>
 				<td><?= InputType ('text', 'car_ts', $arCar['INTERVAL_TS'], '', FALSE, '', 'class="car_ts"') ?></td>
-				<td>км</td>
+				<td><?=Loc::getPackMessage('icar','mycars_km')?></td>
 			</tr>
 			<tr>
-				<td>Стоимость при покупке:</td>
+				<td><?=Loc::getPackMessage('icar','mycars_auto_cost_buy')?>:</td>
 				<td><?= InputType ('text', 'car_cost', Lib\Main::moneyFormat ($arCar['COST'], TRUE), '', FALSE, '',
 				                   'class="car_cost"') ?></td>
-				<td>руб.</td>
+				<td><?=Loc::getPackMessage('icar','mycars_rub')?></td>
 			</tr>
 			<tr>
-				<td>Пробег при покупке:</td>
+				<td><?=Loc::getPackMessage('icar','mycars_mileage_buy')?>:</td>
 				<td><?= InputType ('text', 'car_mileage', Lib\Main::mileageFormat ($arCar['MILEAGE'], TRUE), '', FALSE,
 				                   '', 'class="car_mileage"') ?></td>
-				<td>км</td>
+				<td><?=Loc::getPackMessage('icar','mycars_km')?></td>
 			</tr>
 			<tr>
-				<td>Автомобиль в кредит:</td>
+				<td><?=Loc::getPackMessage('icar','mycars_car_credit')?>:</td>
 				<td><?= SelectBoxBool ('car_credit', (($arCar['CREDIT']) ? 1 : 0)) ?></td>
 				<td>&nbsp;</td>
 			</tr>
 			<tr>
-				<td>Сумма кредита:</td>
+				<td><?=Loc::getPackMessage('icar','mycars_car_credit_cost')?>:</td>
 				<td><?= InputType ('text', 'car_credit_cost', Lib\Main::moneyFormat ($arCar['CREDIT_COST'], TRUE), '',
 				                   FALSE, '', 'class="car_credit_cost"') ?></td>
-				<td>руб.</td>
+				<td><?=Loc::getPackMessage('icar','mycars_rub')?></td>
 			</tr>
 			<tr>
-				<td>Дата окончания ОСАГО:</td>
+				<td><?=Loc::getPackMessage('icar','mycars_date_end_osago')?>:</td>
 				<td><?= InputCalendar ('car_osago', $arCar['DATE_OSAGO_END'], 'class="car_osago"') ?></td>
-				<td>Настроить напоминание</td>
+				<td><?=Loc::getPackMessage('icar','mycars_set_notice')?></td>
 			</tr>
 			<tr>
-				<td>Дата окончания ГТО:</td>
+				<td><?=Loc::getPackMessage('icar','mycars_date_end_gto')?>:</td>
 				<td><?= InputCalendar ('car_gto', $arCar['DATE_GTO_END'], 'class="car_gto"') ?></td>
-				<td>Настроить напоминание</td>
+				<td><?=Loc::getPackMessage('icar','mycars_set_notice')?></td>
 			</tr>
 			<tr>
-				<td>Автомобиль по-умолчанию:</td>
+				<td><?=Loc::getPackMessage('icar','mycars_default_car')?>:</td>
 				<td><?= SelectBoxBool ('car_default', (($arCar['DEFAULT']) ? 1 : 0)) ?></td>
 				<td>&nbsp;</td>
 			</tr>
 			<tr>
-				<td><input class="submit" type="submit" name="submit" value="Сохранить изменения"></td>
+				<td><input class="submit" type="submit" name="submit" value="<?=Loc::getPackMessage('icar','all_save')?>"></td>
 				<td>&nbsp;</td>
 				<td>&nbsp;</td>
 			</tr>
@@ -258,7 +259,7 @@ else
 	if ($res->getResult ())
 	{
 		?>
-		<div class="ok">Изменения успешно сохранены</div><?
+		<div class="ok"><?=Loc::getPackMessage('icar','mycars_change_save_success')?></div><?
 	}
 
 }

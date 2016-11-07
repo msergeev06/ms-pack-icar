@@ -1,13 +1,46 @@
 <?php
+/**
+ * MSergeev\Packages\Icar\Lib\Accident
+ * Раздел ДТП
+ *
+ * @package MSergeev\Packages\Icar
+ * @subpackage Lib
+ * @author Mikhail Sergeev <msergeev06@gmail.com>
+ * @copyright 2016 Mikhail Sergeev
+ */
 
 namespace MSergeev\Packages\Icar\Lib;
 
 use MSergeev\Packages\Icar\Tables\AccidentTable;
+use MSergeev\Core\Lib\Loc;
 
+/**
+ * Class Accident
+ * @package MSergeev\Packages\Icar\Lib
+ */
 class Accident
 {
-	public static function showSelectAccidentList ($carID, $strBoxName, $strDetText='Не выбрано', $strSelectedVal = "null", $field1="class=\"accidentlistselect\"")
+	/**
+	 * Возвращает тег <select> со списком произошедших ДТП
+	 *
+	 * @api
+	 *
+	 * @param int    $carID             ID автомобиля
+	 * @param string $strBoxName        Название тега <select>
+	 * @param string $strDetText        Текст нулевого значения тега <select>
+	 * @param string $strSelectedVal    Нулевое значение тега <select>
+	 * @param string $field1            Дополнительные данные тега <select>
+	 *
+	 * @use SelectBox() Функция вывода тега <select>
+	 *
+	 * @return string
+	 */
+	public static function showSelectAccidentList ($carID, $strBoxName, $strDetText='', $strSelectedVal = "null", $field1="class=\"accidentlistselect\"")
 	{
+		if ($strDetText == '')
+		{
+			$strDetText = Loc::getPackMessage('icar','dtp_not_select');
+		}
 		$arRes = self::getAccidentList($carID);
 		if ($arRes)
 		{
@@ -25,7 +58,18 @@ class Accident
 
 	}
 
-
+	/**
+	 * Возвращает массив, содержащий список произошедших ДТП, либо false
+	 *
+	 * @api
+	 *
+	 * @param int|null  $carID      ID автомобиля, если null берется автомобиль по-умолчанию
+	 * @param int|null  $getID      ID записи о ДТП, либо null, если нужны все
+	 * @param int       $limit      Количество возвращаемых строк
+	 * @param int       $offset     Начиная с какой по счету записи возвращать
+	 *
+	 * @return array|bool   Массив со списком ДТП, либо false
+	 */
 	public static function getAccidentList ($carID=null, $getID=null,$limit=0,$offset=0)
 	{
 		if (is_null($carID))

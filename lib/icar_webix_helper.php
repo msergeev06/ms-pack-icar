@@ -1,32 +1,50 @@
 <?php
+/**
+ * MSergeev\Packages\Icar\Lib\IcarWebixHelper
+ * Помощник в работе с библиотекой Webix
+ *
+ * @package MSergeev\Packages\Icar
+ * @subpackage Lib
+ * @author Mikhail Sergeev <msergeev06@gmail.com>
+ * @copyright 2016 Mikhail Sergeev
+ */
 
 namespace MSergeev\Packages\Icar\Lib;
 
 use MSergeev\Core\Lib as CoreLib;
+use MSergeev\Core\Lib\Loc;
 
+/**
+ * Class IcarWebixHelper
+ * @package MSergeev\Packages\Icar\Lib
+ * @extends MSergeev\Core\Lib\WebixHelper
+ */
 class IcarWebixHelper extends CoreLib\WebixHelper
 {
+	/**
+	 * Конструктор. Добавляет используемые пакетом поля для таблицы в помощник
+	 */
 	public function __construct ()
 	{
 		$arConstruct = array(
 			'ODO' => array(
 				'id' => "odo",
 				'tooltip' => '=false',
-				'header' => "Пробег",
+				'header' => Loc::getPackMessage('icar','all_odo'),
 				'adjust'=>'=true',
 				'sort' => 'int'
 			),
 			'FUELMARK_NAME' => array(
 				'id' => "fuelmark_name",
 				'tooltip' => '=false',
-				'header' => "Тип топлива",
+				'header' => Loc::getPackMessage('icar','all_fuel_type'),
 				'adjust'=>'=true',
 				'sort' => 'string'
 			),
 			'LITER' => array(
 				'id' => "liter",
 				'tooltip' => '=false',
-				'header' => "Литров",
+				'header' => Loc::getPackMessage('icar','all_liters'),
 				'adjust'=>'=true',
 				'sort' => 'int',
 				'format' => '=webix.Number.numToStr({
@@ -39,7 +57,7 @@ class IcarWebixHelper extends CoreLib\WebixHelper
 			'LITER_COST' => array(
 				'id' => "liter_cost",
 				'tooltip' => '=false',
-				'header' => "р/л.",
+				'header' => Loc::getPackMessage('icar','all_r_l'),
 				'adjust'=>'=true',
 				'format' => '=webix.Number.numToStr({
 						groupDelimiter:" ",
@@ -52,7 +70,7 @@ class IcarWebixHelper extends CoreLib\WebixHelper
 			'LITER_COST_SUM' => array(
 				'id' => "sum",
 				'tooltip' => '=false',
-				'header' => "Сумма",
+				'header' => Loc::getPackMessage('icar','all_sum'),
 				'adjust'=>'=true',
 				'sort' => 'int',
 				'format' => '=webix.Number.numToStr({
@@ -65,13 +83,13 @@ class IcarWebixHelper extends CoreLib\WebixHelper
 			'FULL' => array(
 				'id' => "full",
 				'tooltip' => '=false',
-				'header' => "Полный",
+				'header' => Loc::getPackMessage('icar','all_full'),
 				'adjust'=>'=true'
 			),
 			'EXPENCE' => array(
 				'id' => "expence",
 				'tooltip' => '=false',
-				'header' => "Расход",
+				'header' => Loc::getPackMessage('icar','all_expence'),
 				'adjust'=>'=true',
 				'format' => '=webix.Number.numToStr({
 						groupDelimiter:" ",
@@ -83,51 +101,51 @@ class IcarWebixHelper extends CoreLib\WebixHelper
 			),
 			'POINT' => array(
 				'id' => "point_name",
-				'tooltip' => 'Имя точки: #point_name#<br>'
-					.'Тип точки: #point_type#<br>'
-					.'Широта: #point_latitude#<br>'
-					.'Долгота: #point_longitude#',
-				'header' => "Точка",
+				'tooltip' => Loc::getPackMessage('icar','all_point_name').': #point_name#<br>'
+					.Loc::getPackMessage('icar','all_point_type').': #point_type#<br>'
+					.Loc::getPackMessage('icar','all_lat').': #point_latitude#<br>'
+					.Loc::getPackMessage('icar','all_lon').': #point_longitude#',
+				'header' => Loc::getPackMessage('icar','all_point'),
 				'adjust'=>'=true',
 				'sort' => 'string'
 			),
 			'INFO' => array(
 				'id' => "info",
 				'tooltip' => "#comment#",
-				'header' => "Инфо",
+				'header' => Loc::getPackMessage('icar','all_info'),
 				'adjust'=>'=true'
 			),
 			'TS' => array(
 				'id'=>'ts',
-				'header'=>'ТО',
+				'header'=> Loc::getPackMessage('icar','all_ts'),
 				'sort'=>'int',
 				'tooltip'=>'=false',
 				'adjust'=>'=true'
 			),
 			'NAME' => array(
 				'id'=>'name',
-				'header'=>'Название',
+				'header'=> Loc::getPackMessage('icar','all_name'),
 				'sort'=>'string',
 				'tooltip'=>'=false',
 				'adjust'=>'=true'
 			),
 			'CATALOG_NUMBER' => array(
 				'id'=>'catalog_num',
-				'header'=>'Каталог №',
+				'header'=> Loc::getPackMessage('icar','all_catalog_num'),
 				'sort'=>'string',
 				'tooltip'=>'=false',
 				'adjust'=>'=true'
 			),
 			'EXECUTORS' => array(
 				'id'=>'executors_name',
-				'header'=>'Исполнитель работ',
+				'header'=> Loc::getPackMessage('icar','all_executor'),
 				'sort'=>'string',
 				'tooltip'=>'=false',
 				'adjust'=>'=true',
 			),
 			'COST' => array(
 				'id'=>'cost',
-				'header'=>'Стоимость',
+				'header'=> Loc::getPackMessage('icar','all_cost'),
 				'sort'=>'int',
 				'tooltip'=>'=false',
 				'format' => '=webix.Number.numToStr({
@@ -140,7 +158,7 @@ class IcarWebixHelper extends CoreLib\WebixHelper
 			),
 			'SUM' => array(
 				'id'=>'sum',
-				'header'=>'Сумма',
+				'header'=>Loc::getPackMessage('icar','all_sum'),
 				'sort'=>'int',
 				'tooltip'=>'=false',
 				'format' => '=webix.Number.numToStr({
@@ -153,7 +171,7 @@ class IcarWebixHelper extends CoreLib\WebixHelper
 			),
 			'NUMBER' => array(
 				'id'=>'number',
-				'header'=>'Количество',
+				'header'=>Loc::getPackMessage('icar','all_number'),
 				'sort'=>'int',
 				'tooltip'=>'=false',
 				'adjust'=>'true'

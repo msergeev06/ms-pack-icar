@@ -1,4 +1,4 @@
-<? include_once(__DIR__."/include/header.php"); MSergeev\Core\Lib\Buffer::setTitle("Главная"); ?>
+<? include_once(__DIR__."/include/header.php"); MSergeev\Core\Lib\Buffer::setTitle(MSergeev\Core\Lib\Loc::getPackMessage('icar','all_main')); ?>
 
 
 

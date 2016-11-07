@@ -14,11 +14,14 @@ class RepairParts
 
 	public static function showErrorList()
 	{
+		$echo = '';
 		foreach (static::$arError as $key=>$value)
 		{
-			echo '<br>';
-			echo '* '.$value;
+			$echo .= '<br>';
+			$echo .= '* '.$value;
 		}
+
+		return $echo;
 	}
 
 	public static function getTotalRepairPartsCostsFormatted($carID=null)

@@ -1,18 +1,20 @@
-<? include_once(__DIR__."/../include/header.php"); MSergeev\Core\Lib\Buffer::setTitle("Пробег");
+<? include_once(__DIR__."/../include/header.php"); MSergeev\Core\Lib\Buffer::setTitle(MSergeev\Core\Lib\Loc::getPackMessage('icar','odo_title'));
 
 use MSergeev\Packages\Icar\Lib;
+use MSergeev\Core\Lib\Loc;
+
 $defaultCar = Lib\MyCar::getDefaultCarID();
 ?>
 
-<p>Статистика для: <? echo Lib\MyCar::showSelectCars("my_car",$defaultCar,'class="myCar"'); ?><br><br></p>
-<p><a class="linkAdd" href="add.php">Добавить маршрут</a></p>
+<p><?=Loc::getPackMessage('icar','odo_statistic_for')?>: <? echo Lib\MyCar::showSelectCars("my_car",$defaultCar,'class="myCar"'); ?><br><br></p>
+<p><a class="linkAdd" href="add.php"><?=Loc::getPackMessage('icar','odo_add_route')?></a></p>
 
 
 <p><select name="period" id="period_select">
-	<option value="1" selected>Текущий месяц</option>
-	<option value="2">Прошлый месяц</option>
-	<option value="3">За год</option>
-</select>&nbsp;&nbsp;Показать за период с <?=InputCalendar ('from', date("d.m.Y"), 'class="calendarFrom"', $strId="")?> по <?=InputCalendar ('to', date("d.m.Y"), 'class="calendarTo"', $strId="")?> <a href="#">Показать</a></p>
+	<option value="1" selected><?=Loc::getPackMessage('icar','odo_now_month')?></option>
+	<option value="2"><?=Loc::getPackMessage('icar','odo_last_month')?></option>
+	<option value="3"><?=Loc::getPackMessage('icar','odo_for_year')?></option>
+</select>&nbsp;&nbsp;<?=Loc::getPackMessage('icar','odo_display_period_from')?> <?=InputCalendar ('from', date("d.m.Y"), 'class="calendarFrom"', $strId="")?> <?=Loc::getPackMessage('icar','odo_display_period_to')?> <?=InputCalendar ('to', date("d.m.Y"), 'class="calendarTo"', $strId="")?> <a href="#"><?=Loc::getPackMessage('icar','odo_show')?></a></p>
 
 <div class="charts"><? echo Lib\Odo::showChartsOdo('01.'.date("m.Y"),date("d.m.Y"),$defaultCar); ?></div>
 <script type="text/javascript">

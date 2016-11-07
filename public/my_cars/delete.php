@@ -1,6 +1,7 @@
-<? include_once(__DIR__."/../include/header.php"); MSergeev\Core\Lib\Buffer::setTitle("Мои машины - Удаление автомобиля");
+<? include_once(__DIR__."/../include/header.php"); MSergeev\Core\Lib\Buffer::setTitle(MSergeev\Core\Lib\Loc::getPackMessage('icar','mycars_my_cars')." - ".MSergeev\Core\Lib\Loc::getPackMessage('icar','mycars_car_delete'));
 
 use \MSergeev\Packages\Icar\Lib;
+use MSergeev\Core\Lib\Loc;
 
 if (!isset($_POST['step']))
 {
@@ -12,7 +13,7 @@ if (!isset($_POST['step']))
 		$carInfo = Lib\MyCar::getCarByID($carID);
 		if (!$canDelete)
 		{
-			?><p>Данный автомобиль удалить невозможно, так как существуют данные, ссылающиеся на него.</p><?
+			?><p><?=Loc::getPackMessage('icar','mycars_car_no_delete')?></p><?
 		}
 		else
 		{
@@ -21,8 +22,8 @@ if (!isset($_POST['step']))
 			<form method="post" action="" name="delete_car">
 				<input type="hidden" name="step" value="1">
 				<input type="hidden" name="car_id" value="<?=$carID?>">
-				<p><input class="check_confirm" type="checkbox" name="confirm" value="1">&nbsp;Я подтверждаю, что хочу удалить автомобиль "<?=$carInfo['NAME']?>", c номером "<?=$carInfo['CAR_NUMBER']?>"!</p>
-				<input class="delete_submit" type="submit" name="submit_delete_car" value="Удалить автомобиль">
+				<p><input class="check_confirm" type="checkbox" name="confirm" value="1">&nbsp;<?=Loc::getPackMessage('icar','mycars_car_confirm_delete',array('CAR_NAME'=>$carInfo['NAME'],'CAR_NUMBER'=>$carInfo['CAR_NUMBER']))?></p>
+				<input class="delete_submit" type="submit" name="submit_delete_car" value="<?=Loc::getPackMessage('icar','mycars_button_car_delete')?>">
 			</form>
 			<script type="text/javascript">
 				$(document).on("ready",function(){
@@ -50,16 +51,16 @@ else
 		$res = Lib\MyCar::deleteCar(intval($_POST['car_id']));
 		if ($res)
 		{
-			?><p>Автомобиль успешно удален</p><?
+			?><p><?=Loc::getPackMessage('icar','mycars_car_del_success')?></p><?
 		}
 		else
 		{
-			?><p>При удалении возникла ошибка. Автомобиль не был удален</p><?
+			?><p><?=Loc::getPackMessage('icar','mycars_car_del_error')?></p><?
 		}
 	}
 	else
 	{
-		?><p>При удалении возникла ошибка. Автомобиль не был удален</p><?
+		?><p><?=Loc::getPackMessage('icar','mycars_car_del_error')?></p><?
 	}
 }
 ?>

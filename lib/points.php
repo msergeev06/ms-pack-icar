@@ -1,4 +1,13 @@
 <?php
+/**
+ * MSergeev\Packages\Icar\Lib\Points
+ * Путевые точки
+ *
+ * @package MSergeev\Packages\Icar
+ * @subpackage Lib
+ * @author Mikhail Sergeev <msergeev06@gmail.com>
+ * @copyright 2016 Mikhail Sergeev
+ */
 
 namespace MSergeev\Packages\Icar\Lib;
 
@@ -6,7 +15,17 @@ use MSergeev\Core\Entity\Query;
 use MSergeev\Core\Exception;
 use MSergeev\Core\Lib\SqlHelper;
 use MSergeev\Packages\Icar\Tables;
+use MSergeev\Core\Lib\Loc;
 
+/**
+ * Class Points
+ * @package MSergeev\Packages\Icar\Lib
+ *
+ * @var array|null  $arPointsList
+ * @var bool|null   $bPointsListActive
+ * @var array|null  $arPointTypesList
+ * @var bool|null   $bPointTypesListActive
+ */
 class Points
 {
 	protected static $arPointsList=null;
@@ -28,11 +47,11 @@ class Points
 				);
 			}
 
-			return SelectBox($strBoxName,$arValues,'--- Выбрать ---',$strSelectedVal,$field1);
+			return SelectBox($strBoxName,$arValues,Loc::getPackMessage('icar','all_select_default'),$strSelectedVal,$field1);
 		}
 		else
 		{
-			return '[Нет путевых точек]';
+			return '['.Loc::getPackMessage('icar','all_no_point').']';
 		}
 	}
 

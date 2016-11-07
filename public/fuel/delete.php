@@ -1,6 +1,7 @@
-<? include_once(__DIR__."/../include/header.php"); MSergeev\Core\Lib\Buffer::setTitle("Топливо - Удаление данных о заправке");
+<? include_once(__DIR__."/../include/header.php"); MSergeev\Core\Lib\Buffer::setTitle(MSergeev\Core\Lib\Loc::getPackMessage('icar','fuel_title')." - ".MSergeev\Core\Lib\Loc::getPackMessage('icar','fuel_title_delete'));
 
 use \MSergeev\Packages\Icar\Lib;
+use MSergeev\Core\Lib\Loc;
 
 if (!isset($_POST['step']))
 {
@@ -12,8 +13,8 @@ if (!isset($_POST['step']))
 		<form method="post" action="" name="delete_fuel">
 			<input type="hidden" name="step" value="1">
 			<input type="hidden" name="fuel_id" value="<?=$fuelID?>">
-			<p><input class="check_confirm" type="checkbox" name="confirm" value="1">&nbsp;Я подтверждаю, что хочу удалить запись о заправке №<?=$fuelID?>!</p>
-			<input class="delete_submit" type="submit" name="submit_delete_car" value="Удалить данные">
+			<p><input class="check_confirm" type="checkbox" name="confirm" value="1">&nbsp;<?=Loc::getPackMessage('icar','fuel_confirm_delete',array('ID'=>$fuelID))?></p>
+			<input class="delete_submit" type="submit" name="submit_delete_car" value="<?=Loc::getPackMessage('icar','all_delete')?>">
 		</form>
 		<script type="text/javascript">
 			$(document).on("ready",function(){
@@ -40,16 +41,16 @@ else
 		$res = Lib\Fuel::deleteFuel(intval($_POST['fuel_id']));
 		if ($res)
 		{
-			?><p>Запись успешно удалена</p><?
+			?><p><?=Loc::getPackMessage('icar','fuel_delete_success')?></p><?
 		}
 		else
 		{
-			?><p>При удалении возникла ошибка.</p><?
+			?><p><?=Loc::getPackMessage('icar','fuel_delete_error')?></p><?
 		}
 	}
 	else
 	{
-		?><p>При удалении возникла ошибка.</p><?
+		?><p><?=Loc::getPackMessage('icar','fuel_delete_error')?></p><?
 	}
 }
 ?>

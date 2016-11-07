@@ -1,23 +1,69 @@
 <?php
+/**
+ * MSergeev\Packages\Icar\Lib\MyCar
+ * Мои автомобили
+ *
+ * @package MSergeev\Packages\Icar
+ * @subpackage Lib
+ * @author Mikhail Sergeev <msergeev06@gmail.com>
+ * @copyright 2016 Mikhail Sergeev
+ */
 
 namespace MSergeev\Packages\Icar\Lib;
 
 use MSergeev\Core\Entity\Query;
 use MSergeev\Core\Exception;
+use MSergeev\Core\Lib\Loc;
 use MSergeev\Core\Lib\SqlHelper;
 use MSergeev\Core\Lib\DateHelper;
-use MSergeev\Packages\Icar\Tables\CarBodyTable;
-use MSergeev\Packages\Icar\Tables\CarBrandTable;
-use MSergeev\Packages\Icar\Tables\CarGearboxTable;
-use MSergeev\Packages\Icar\Tables\CarModelTable;
 use MSergeev\Packages\Icar\Tables\MyCarTable;
 
+/**
+ * Class MyCar
+ * @package MSergeev\Packages\Icar\Lib
+ *
+ * @var array $arCarField Структура полей таблицы автомобиля
+ */
 class MyCar
 {
+	private static $arCarFields = array(
+		'ID',
+		'ACTIVE',
+		'SORT',
+		'NAME',
+		'CAR_BRANDS_ID'             => 'BRAND_ID',
+		'CAR_BRANDS_ID.NAME'        => 'BRAND_NAME',
+		'CAR_BRANDS_ID.CODE'        => 'BRAND_CODE',
+		'CAR_MODEL_ID'              => 'MODEL_ID',
+		'CAR_MODEL_ID.NAME'         => 'MODEL_NAME',
+		'CAR_MODEL_ID.BRANDS_ID'    => 'MODEL_BRANDS_ID',
+		'CAR_MODEL_ID.CODE'         => 'MODEL_CODE',
+		'CAR_GEARBOX_ID'            => 'GEARBOX_ID',
+		'CAR_GEARBOX_ID.NAME'       => 'GEARBOX_NAME',
+		'CAR_GEARBOX_ID.CODE'       => 'GEARBOX_CODE',
+		'CAR_BODY_ID'               => 'BODY_ID',
+		'CAR_BODY_ID.NAME'          => 'BODY_NAME',
+		'CAR_BODY_ID.CODE'          => 'BODY_CODE',
+		'YEAR',
+		'VIN',
+		'CAR_NUMBER',
+		'ENGINE_CAPACITY',
+		'INTERVAL_TS',
+		'COST',
+		'MILEAGE',
+		'CREDIT',
+		'CREDIT_COST',
+		'DATE_OSAGO_END',
+		'DATE_GTO_END',
+		'DEFAULT'
+	);
+
 	/**
 	 * Добавляет новый автомобиль
 	 *
-	 * @param array $arData
+	 * @api
+	 *
+	 * @param array $arData Массив данных по автомобилю
 	 *
 	 * @throw Exception\ArgumentNullException
 	 * @return \MSergeev\Core\Lib\DBResult
@@ -45,13 +91,13 @@ class MyCar
 		{
 			if (isset($arData[$field]))
 			{
-				$arInsert[0][$field] = $arData[$field];
+				$arInsert[$field] = $arData[$field];
 			}
 		}
 
-		if (isset($arInsert[0]['DEFAULT']) && $arInsert[0]['DEFAULT'])
+		if (isset($arInsert['DEFAULT']) && $arInsert['DEFAULT'])
 		{
-			$res = static::uncheckDefaultAllCars();
+			static::uncheckDefaultAllCars();
 		}
 
 		$query = new Query('insert');
@@ -68,7 +114,9 @@ class MyCar
 	/**
 	 * Обновляет данне по автомобилю
 	 *
-	 * @param array $arData
+	 * @api
+	 *
+	 * @param array $arData Массив обновляемых полей таблицы
 	 *
 	 * @throw Exception\ArgumentNullException
 	 *        Exception\ArgumentOutOfRangeException
@@ -113,7 +161,7 @@ class MyCar
 
 		if (isset($arUpdate['DEFAULT']) && $arUpdate['DEFAULT'])
 		{
-			$res = static::uncheckDefaultAllCars();
+			static::uncheckDefaultAllCars();
 		}
 
 		$query = new Query('update');
@@ -136,6 +184,8 @@ class MyCar
 	/**
 	 * Проверяет можно ли удалить автомобиль,
 	 * т.е. нет ли данных, ссылающихся на данный автомобиль
+	 *
+	 * @api
 	 *
 	 * @param int $carID
 	 *
@@ -161,6 +211,13 @@ class MyCar
 		return !$bLinks;
 	}
 
+	/**
+	 * Удаляет указанный автомобиль
+	 *
+	 * @param int $carID ID автомобиля
+	 *
+	 * @return array|bool
+	 */
 	public static function deleteCar ($carID=0)
 	{
 		try
@@ -179,7 +236,7 @@ class MyCar
 		$query = new Query("delete");
 		$query->setDeleteParams(
 			$carID,
-			null,   //true
+			null,   //false
 			MyCarTable::getTableName(),
 			MyCarTable::getMapArray(),
 			MyCarTable::getTableLinks()
@@ -198,18 +255,20 @@ class MyCar
 	/**
 	 * Снимает пометку "по-умолчанию" со всех автомобилей
 	 *
+	 * @api
+	 *
 	 * @return \MSergeev\Core\Lib\DBResult
 	 */
 	public static function uncheckDefaultAllCars()
 	{
-		$helper = new SqlHelper();
+		$helper = new SqlHelper(MyCarTable::getTableName());
 		$query = new Query('update');
 		$sql = "UPDATE\n\t"
-			.$helper->wrapQuotes(MyCarTable::getTableName())
+			.$helper->wrapTableQuotes()
 			."\nSET\n\t"
 			.$helper->wrapQuotes('DEFAULT')
 			." = 'N'\nWHERE\n\t"
-			.$helper->wrapQuotes('DEFAULT')." = 'Y';";
+			.$helper->wrapFieldQuotes('DEFAULT')." = 'Y';";
 		$query->setQueryBuildParts($sql);
 		$res = $query->exec();
 
@@ -219,271 +278,31 @@ class MyCar
 	/**
 	 * Возвращает массив данных обо всех автомобилях
 	 *
+	 * @api
+	 *
 	 * @param bool $bActive
 	 *
 	 * @return array
 	 */
 	public static function getListCar ($bActive=true)
 	{
-		$helper = new SqlHelper();
-
-		$sql = "SELECT\n\t";
-		$sql .= $helper->wrapQuotes('car')."."
-			.$helper->wrapQuotes('ID')." AS "
-			.$helper->wrapQuotes('ID').",\n\t";
-		$sql .= $helper->wrapQuotes('car')
-			.".".$helper->wrapQuotes('ACTIVE')." AS "
-			.$helper->wrapQuotes('ACTIVE').",\n\t";
-		$sql .= $helper->wrapQuotes('car')."."
-			.$helper->wrapQuotes('SORT')." AS "
-			.$helper->wrapQuotes('SORT').",\n\t";
-		$sql .= $helper->wrapQuotes('car')."."
-			.$helper->wrapQuotes('NAME')." AS "
-			.$helper->wrapQuotes('NAME').",\n\t";
-		$sql .= $helper->wrapQuotes('brand')."."
-			.$helper->wrapQuotes('ID')." AS "
-			.$helper->wrapQuotes('BRAND_ID').",\n\t";
-		$sql .= $helper->wrapQuotes('brand')."."
-			.$helper->wrapQuotes('NAME')." AS "
-			.$helper->wrapQuotes('BRAND_NAME').",\n\t";
-		$sql .= $helper->wrapQuotes('brand')."."
-			.$helper->wrapQuotes('CODE')." AS "
-			.$helper->wrapQuotes('BRAND_CODE').",\n\t";
-		$sql .= $helper->wrapQuotes('model')."."
-			.$helper->wrapQuotes('ID')." AS "
-			.$helper->wrapQuotes('MODEL_ID').",\n\t";
-		$sql .= $helper->wrapQuotes('model')."."
-			.$helper->wrapQuotes('NAME')." AS "
-			.$helper->wrapQuotes('MODEL_NAME').",\n\t";
-		$sql .= $helper->wrapQuotes('model')."."
-			.$helper->wrapQuotes('BRANDS_ID')." AS "
-			.$helper->wrapQuotes('MODEL_BRANDS_ID').",\n\t";
-		$sql .= $helper->wrapQuotes('model')."."
-			.$helper->wrapQuotes('CODE')." AS "
-			.$helper->wrapQuotes('MODEL_CODE').",\n\t";
-		$sql .= $helper->wrapQuotes('gear')."."
-			.$helper->wrapQuotes('ID')." AS "
-			.$helper->wrapQuotes('GEARBOX_ID').",\n\t";
-		$sql .= $helper->wrapQuotes('gear')."."
-			.$helper->wrapQuotes('NAME')." AS "
-			.$helper->wrapQuotes('GEARBOX_NAME').",\n\t";
-		$sql .= $helper->wrapQuotes('gear')."."
-			.$helper->wrapQuotes('CODE')." AS "
-			.$helper->wrapQuotes('GEARBOX_CODE').",\n\t";
-		$sql .= $helper->wrapQuotes('body')."."
-			.$helper->wrapQuotes('ID')." AS "
-			.$helper->wrapQuotes('BODY_ID').",\n\t";
-		$sql .= $helper->wrapQuotes('body')."."
-			.$helper->wrapQuotes('NAME')." AS "
-			.$helper->wrapQuotes('BODY_NAME').",\n\t";
-		$sql .= $helper->wrapQuotes('body')."."
-			.$helper->wrapQuotes('CODE')." AS "
-			.$helper->wrapQuotes('BODY_CODE').",\n\t";
-		$sql .= $helper->wrapQuotes('car')."."
-			.$helper->wrapQuotes('YEAR')." AS "
-			.$helper->wrapQuotes('YEAR').",\n\t";
-		$sql .= $helper->wrapQuotes('car')."."
-			.$helper->wrapQuotes('VIN')." AS "
-			.$helper->wrapQuotes('VIN').",\n\t";
-		$sql .= $helper->wrapQuotes('car')."."
-			.$helper->wrapQuotes('CAR_NUMBER')." AS "
-			.$helper->wrapQuotes('CAR_NUMBER').",\n\t";
-		$sql .= $helper->wrapQuotes('car')."."
-			.$helper->wrapQuotes('ENGINE_CAPACITY')." AS "
-			.$helper->wrapQuotes('ENGINE_CAPACITY').",\n\t";
-		$sql .= $helper->wrapQuotes('car')."."
-			.$helper->wrapQuotes('INTERVAL_TS')." AS "
-			.$helper->wrapQuotes('INTERVAL_TS').",\n\t";
-		$sql .= $helper->wrapQuotes('car')."."
-			.$helper->wrapQuotes('COST')." AS "
-			.$helper->wrapQuotes('COST').",\n\t";
-		$sql .= $helper->wrapQuotes('car')."."
-			.$helper->wrapQuotes('MILEAGE')." AS "
-			.$helper->wrapQuotes('MILEAGE').",\n\t";
-		$sql .= $helper->wrapQuotes('car')."."
-			.$helper->wrapQuotes('CREDIT')." AS "
-			.$helper->wrapQuotes('CREDIT').",\n\t";
-		$sql .= $helper->wrapQuotes('car')."."
-			.$helper->wrapQuotes('CREDIT_COST')." AS "
-			.$helper->wrapQuotes('CREDIT_COST').",\n\t";
-		$sql .= $helper->wrapQuotes('car')."."
-			.$helper->wrapQuotes('DATE_OSAGO_END')." AS "
-			.$helper->wrapQuotes('DATE_OSAGO_END').",\n\t";
-		$sql .= $helper->wrapQuotes('car')."."
-			.$helper->wrapQuotes('DATE_GTO_END')." AS "
-			.$helper->wrapQuotes('DATE_GTO_END').",\n\t";
-		$sql .= $helper->wrapQuotes('car')."."
-			.$helper->wrapQuotes('DEFAULT')." AS "
-			.$helper->wrapQuotes('DEFAULT')."\n";
-		$sql .= "FROM\n\t";
-		$sql .= $helper->wrapQuotes('ms_icar_my_car')." AS "
-			.$helper->wrapQuotes('car')." ,\n\t";
-		$sql .= $helper->wrapQuotes('ms_icar_car_brand')." AS "
-			.$helper->wrapQuotes('brand')." ,\n\t";
-		$sql .= $helper->wrapQuotes('ms_icar_car_model')." AS "
-			.$helper->wrapQuotes('model')." ,\n\t";
-		$sql .= $helper->wrapQuotes('ms_icar_car_gearbox')." AS "
-			.$helper->wrapQuotes('gear')." ,\n\t";
-		$sql .= $helper->wrapQuotes('ms_icar_car_body')." AS "
-			.$helper->wrapQuotes('body')."\n";
-		$sql .= "WHERE\n\t";
+		$arList = array(
+			'select' => self::$arCarFields,
+			'order' => array('SORT'=>'ASC','NAME'=>'ASC')
+		);
 		if ($bActive)
 		{
-			$sql .= $helper->wrapQuotes('car')."."
-				.$helper->wrapQuotes('ACTIVE')." = 'Y' AND\n\t";
+			$arList['filter'] = array('ACTIVE'=>true);
 		}
-		$sql .= $helper->wrapQuotes('brand')."."
-			.$helper->wrapQuotes('ID')." = "
-			.$helper->wrapQuotes('car')."."
-			.$helper->wrapQuotes('CAR_BRANDS_ID')." AND\n\t";
-		$sql .= $helper->wrapQuotes('model')."."
-			.$helper->wrapQuotes('ID')." = "
-			.$helper->wrapQuotes('car')."."
-			.$helper->wrapQuotes('CAR_MODEL_ID')." AND\n\t";
-		$sql .= $helper->wrapQuotes('gear')."."
-			.$helper->wrapQuotes('ID')." = "
-			.$helper->wrapQuotes('car')."."
-			.$helper->wrapQuotes('CAR_GEARBOX_ID')." AND\n\t";
-		$sql .= $helper->wrapQuotes('body')."."
-			.$helper->wrapQuotes('ID')." = "
-			.$helper->wrapQuotes('car')."."
-			.$helper->wrapQuotes('CAR_BODY_ID')."\n";
-		$sql .= "ORDER BY\n\t";
-		$sql .= $helper->wrapQuotes('car')."."
-			.$helper->wrapQuotes('SORT')." ASC,\n\t";
-		$sql .= $helper->wrapQuotes('car')."."
-			.$helper->wrapQuotes('NAME')." ASC";
-
-
-		$query = new Query('select');
-		$query->setQueryBuildParts($sql);
-		$res = $query->exec();
-		$arResult = array();
-		$i=0;
-		while ($ar_res = $res->fetch())
-		{
-			foreach ($ar_res as $key=>$value)
-			{
-				if (!is_numeric($key))
-				{
-					$arResult[$i][$key] = $value;
-				}
-			}
-			$i++;
-		}
-		$arResult = static::fetchCarData($arResult);
-
-		return $arResult;
-	}
-
-	/**
-	 * Получает развернутые данные об автомобиле из других таблиц
-	 *
-	 * @param $arResult
-	 *
-	 * @return mixed
-	 */
-	protected static function fetchCarData ($arResult)
-	{
-		$myCarMap = MyCarTable::getMapArray();
-		$carBodyMap = CarBodyTable::getMapArray();
-		$carBrandMap = CarBrandTable::getMapArray();
-		$carGearboxMap = CarGearboxTable::getMapArray();
-		$carModelMap = CarModelTable::getMapArray();
-		foreach ($arResult as $key=>&$arCar)
-		{
-			foreach ($arCar as $field=>&$value)
-			{
-				if (isset($myCarMap[$field]))
-				{
-					$value = $myCarMap[$field]->fetchDataModification($value);
-				}
-				elseif (strstr($field,'BRAND_'))
-				{
-					switch ($field)
-					{
-						case 'BRAND_ID':
-							$value = $carBrandMap['ID']->fetchDataModification($value);
-							$arCar['BRAND']['ID'] = $value;
-							break;
-						case 'BRAND_NAME':
-							$value = $carBrandMap['NAME']->fetchDataModification($value);
-							$arCar['BRAND']['NAME'] = $value;
-							break;
-						case 'BRAND_CODE':
-							$value = $carBrandMap['CODE']->fetchDataModification($value);
-							$arCar['BRAND']['CODE'] = $value;
-							break;
-					}
-				}
-				elseif (strstr($field,'MODEL_'))
-				{
-					switch ($field)
-					{
-						case 'MODEL_ID':
-							$value = $carModelMap['ID']->fetchDataModification($value);
-							$arCar['MODEL']['ID'] = $value;
-							break;
-						case 'MODEL_NAME':
-							$value = $carModelMap['NAME']->fetchDataModification($value);
-							$arCar['MODEL']['NAME'] = $value;
-							break;
-						case 'MODEL_BRANDS_ID':
-							$value = $carModelMap['BRANDS_ID']->fetchDataModification($value);
-							$arCar['MODEL']['BRAND_ID'] = $value;
-							break;
-						case 'MODEL_CODE':
-							$value = $carModelMap['CODE']->fetchDataModification($value);
-							$arCar['MODEL']['CODE'] = $value;
-							break;
-					}
-				}
-				elseif (strstr($field,'GEARBOX_'))
-				{
-					switch ($field)
-					{
-						case 'GEARBOX_ID':
-							$value = $carGearboxMap['ID']->fetchDataModification($value);
-							$arCar['GEARBOX']['ID'] = $value;
-							break;
-						case 'GEARBOX_NAME':
-							$value = $carGearboxMap['NAME']->fetchDataModification($value);
-							$arCar['GEARBOX']['NAME'] = $value;
-							break;
-						case 'GEARBOX_CODE':
-							$value = $carGearboxMap['CODE']->fetchDataModification($value);
-							$arCar['GEARBOX']['CODE'] = $value;
-							break;
-					}
-				}
-				elseif (strstr($field,'BODY_'))
-				{
-					switch ($field)
-					{
-						case 'BODY_ID':
-							$value = $carBodyMap['ID']->fetchDataModification($value);
-							$arCar['BODY']['ID'] = $value;
-							break;
-						case 'BODY_NAME':
-							$value = $carBodyMap['NAME']->fetchDataModification($value);
-							$arCar['BODY']['NAME'] = $value;
-							break;
-						case 'BODY_CODE':
-							$value = $carBodyMap['CODE']->fetchDataModification($value);
-							$arCar['BODY']['CODE'] = $value;
-							break;
-					}
-				}
-			}
-			unset($value);
-		}
-		unset($arCar);
+		$arResult = MyCarTable::getList($arList);
 
 		return $arResult;
 	}
 
 	/**
 	 * Подсчитывает общую сумму расходов по автомобилю
+	 *
+	 * @api
 	 *
 	 * @param int $carID
 	 *
@@ -497,6 +316,8 @@ class MyCar
 	/**
 	 * Подсчитывает средний расход топлива автомобиля
 	 *
+	 * @api
+	 *
 	 * @param int $carID
 	 *
 	 * @return float
@@ -509,6 +330,8 @@ class MyCar
 	/**
 	 * Возвращает отформатированное значение израсходованного топлива
 	 *
+	 * @api
+	 *
 	 * @param int $carID
 	 *
 	 * @return string
@@ -520,6 +343,8 @@ class MyCar
 
 	/**
 	 * Подсчитывает общее количество израсходованного топлива
+	 *
+	 * TODO: Доделать или удалить
 	 *
 	 * @param int $carID
 	 *
@@ -534,6 +359,8 @@ class MyCar
 
 	/**
 	 * Возвращает текущее значение пробега автомобиля
+	 *
+	 * @api
 	 *
 	 * @param int $carID
 	 *
@@ -558,6 +385,8 @@ class MyCar
 	/**
 	 * Выводит отформатированное текщее значение пробега автомобиля
 	 *
+	 * @api
+	 *
 	 * @param int $carID
 	 *
 	 * @return string
@@ -570,37 +399,35 @@ class MyCar
 	/**
 	 * Возвращает массив параметров указанного автомобиля
 	 *
-	 * @param int $carID
+	 * @api
+	 *
+	 * @param int $carID ID автомобиля. Если не указан - будет выбран автомобиль по-умолчанию
 	 *
 	 * @return array|bool
 	 */
 	public static function getCarByID ($carID=0)
 	{
-		if ($carID==0) $carID = static::getDefaultCarID();
+		if ($carID==0)
+		{
+			$carID = static::getDefaultCarID();
+		}
 
 		$arResult = MyCarTable::getList(array(
-			"filter" => array(
-				"ID" => $carID
-			),
-			"limit" => 1
+			'select' => self::$arCarFields,
+			'filter' => array('ID' => $carID),
+			'limit' => 1
 		));
 		if (isset($arResult[0]))
+		{
 			$arResult = $arResult[0];
+		}
 		return $arResult;
 	}
 
 	/**
-	 * @deprecated
-	 * @see getDefaultCarID
-	 * @return bool
-	 */
-	public static function getDefaultCar ()
-	{
-		return static::getDefaultCarID();
-	}
-
-	/**
 	 * Возвращает ID автомобиля по-умолчанию
+	 *
+	 * @api
 	 *
 	 * @return bool|int
 	 */
@@ -624,6 +451,18 @@ class MyCar
 		}
 	}
 
+	/**
+	 * Выводит тег <select>, содержащий список автомобилей
+	 *
+	 * @api
+	 *
+	 * @param string $strBoxName        Название тега <select>
+	 * @param null   $strSelectedVal    Значение по-умолчанию
+	 * @param string $field1            Прочие параметры тега <select>
+	 * @use SelectBox() Функция вывода тега <select>
+	 *
+	 * @return string
+	 */
 	public static function showSelectCars ($strBoxName, $strSelectedVal = null, $field1="class=\"typeselect\"")
 	{
 		$arCars = static::getListCar();
@@ -644,19 +483,20 @@ class MyCar
 		return SelectBox($strBoxName, $arValues, "", $strSelectedVal, $field1);
 	}
 
+	/**
+	 * Возвращает значение одометра автомобиля на момент покупки
+	 *
+	 * @api
+	 *
+	 * @param null|int $carID ID автомобиля. Если не указан, будет выбран автомобиль по-умолчанию
+	 *
+	 * @return bool|float Значение одометра, либо false
+	 */
 	public static function getBuyCarOdo ($carID=null)
 	{
-		try
+		if (is_null($carID))
 		{
-			if (is_null($carID))
-			{
-				throw new Exception\ArgumentNullException('carID');
-			}
-		}
-		catch (Exception\ArgumentNullException $e)
-		{
-			$e->showException();
-			return false;
+			$carID = MyCar::getDefaultCarID();
 		}
 
 		if ($arRes = MyCarTable::getList(array(
@@ -672,6 +512,14 @@ class MyCar
 		}
 	}
 
+	/**
+	 * Функция проверяет необходимость прохождения ТО и продление страховки.
+	 * Если находит - создает массив сообщений, которые потом выводятся на экран.
+	 *
+	 * @api
+	 *
+	 * @return array Массив с напоминаниями
+	 */
 	public static function checkAlerts ()
 	{
 		$arAlerts = array();
@@ -701,7 +549,10 @@ class MyCar
 				$arAlerts[] = array(
 					'COLOR' => 'green',
 					'TYPE' => 'odo',
-					'TEXT' => 'Обратите внимание! Скоро необходимо будет проходить плановое ТО на автомобиле "'.$arCar['NAME'].'"! Осталось проехать '.$raznica.' км'
+					'TEXT' => Loc::getPackMessage('icar','mycars_alert_ts_green',array(
+						'CAR_NAME'=>$arCar['NAME'],
+						'KM'=>$raznica
+					))
 				);
 			}
 			elseif ($raznica > 300 && $raznica <= 500)
@@ -709,7 +560,10 @@ class MyCar
 				$arAlerts[] = array(
 					'COLOR' => 'yellow',
 					'TYPE' => 'odo',
-					'TEXT' => 'Внимание! В ближайшее время необходимо пройти плановое ТО на автомобиле "'.$arCar['NAME'].'"! Осталось проехать '.$raznica.' км'
+					'TEXT' => Loc::getPackMessage('icar','mycars_alert_ts_yellow',array(
+						'CAR_NAME'=>$arCar['NAME'],
+						'KM'=>$raznica
+					))
 				);
 			}
 			elseif ($raznica >= 0 && $raznica <= 300)
@@ -717,7 +571,9 @@ class MyCar
 				$arAlerts[] = array(
 					'COLOR' => 'red',
 					'TYPE' => 'odo',
-					'TEXT' => 'ВНИМАНИЕ! Необходимо в срочном порядке пройти плановое ТО на автомобиле "'.$arCar['NAME'].'"!'
+					'TEXT' => Loc::getPackMessage('icar','mycars_alert_ts_red',array(
+						'CAR_NAME'=>$arCar['NAME']
+					))
 				);
 			}
 
@@ -731,7 +587,11 @@ class MyCar
 				$arAlerts[] = array(
 					'COLOR' => 'green',
 					'TYPE' => 'osago',
-					'TEXT' => 'Заканчивается срок действия полиса ОСАГО у автомобиля "'.$arCar['NAME'].'". Рекомендуем позаботится о продлении заранее. Осталось '.$carOsagoDay.' '.$dateHelper->showDaysRus($carOsagoDay)
+					'TEXT' => Loc::getPackMessage('icar','mycars_alert_osago_green',array(
+						'CAR_NAME'=>$arCar['NAME'],
+						'DAY_NUM'=>$carOsagoDay,
+						'DAY_TEXT'=>$dateHelper->showDaysRus($carOsagoDay)
+					))
 				);
 			}
 			elseif ($carOsagoDay > 0 && $carOsagoDay <= 5)
@@ -739,7 +599,11 @@ class MyCar
 				$arAlerts[] = array(
 					'COLOR' => 'yellow',
 					'TYPE' => 'osago',
-					'TEXT' => 'Внимание! Скоро закончится срок действия полиса ОСАГО у автомобиля "'.$arCar['NAME'].'". Необходимо продлить полис! Осталось '.$carOsagoDay.' '.$dateHelper->showDaysRus($carOsagoDay)
+					'TEXT' => Loc::getPackMessage('icar','mycars_alert_osago_yellow',array(
+						'CAR_NAME'=>$arCar['NAME'],
+						'DAY_NUM'=>$carOsagoDay,
+						'DAY_TEXT'=>$dateHelper->showDaysRus($carOsagoDay)
+					))
 				);
 			}
 			elseif ($carOsagoDay == 0)
@@ -747,7 +611,9 @@ class MyCar
 				$arAlerts[] = array(
 					'COLOR' => 'red',
 					'TYPE' => 'osago',
-					'TEXT' => 'ВНИМАНИЕ! Сегодня заканчиватся срок действия полиса ОСАГО у автомобиля "'.$arCar['NAME'].'". Необходимо СРОЧНО продлить полис!'
+					'TEXT' => Loc::getPackMessage('icar','mycars_alert_osago_red',array(
+						'CAR_NAME'=>$arCar['NAME']
+					))
 				);
 			}
 			elseif ($carOsagoDay < 0)
@@ -755,7 +621,9 @@ class MyCar
 				$arAlerts[] = array(
 					'COLOR' => 'red',
 					'TYPE' => 'osago',
-					'TEXT' => 'ВНИМАНИЕ! Закончился срок действия полиса ОСАГО у автомобиля "'.$arCar['NAME'].'". Необходимо СРОЧНО продлить полис!'
+					'TEXT' => Loc::getPackMessage('icar','mycars_alert_osago_red2',array(
+						'CAR_NAME'=>$arCar['NAME']
+					))
 				);
 			}
 
@@ -764,7 +632,11 @@ class MyCar
 				$arAlerts[] = array(
 					'COLOR' => 'green',
 					'TYPE' => 'gto',
-					'TEXT' => 'Подходит дата очередного ГТО у автомобиля "'.$arCar['NAME'].'". Подготовьте автомобиль к осмотру. Осталось '.$carGtoDay.' '.$dateHelper->showDaysRus($carGtoDay)
+					'TEXT' => Loc::getPackMessage('icar','mycars_alert_gto_green',array(
+						'CAR_NAME'=>$arCar['NAME'],
+						'DAY_NUM'=>$carGtoDay,
+						'DAY_TEXT'=>$dateHelper->showDaysRus($carGtoDay)
+					))
 				);
 			}
 			elseif ($carGtoDay > 0 && $carGtoDay <= 5)
@@ -772,7 +644,11 @@ class MyCar
 				$arAlerts[] = array(
 					'COLOR' => 'yellow',
 					'TYPE' => 'gto',
-					'TEXT' => 'Внимание! Скоро подойдет дата очередного ГТО у автомобиля "'.$arCar['NAME'].'". Последняя возможность подготовить автомобиль к осмотру! Осталось '.$carGtoDay.' '.$dateHelper->showDaysRus($carGtoDay)
+					'TEXT' => Loc::getPackMessage('icar','mycars_alert_gto_yellow',array(
+						'CAR_NAME'=>$arCar['NAME'],
+						'DAY_NUM'=>$carGtoDay,
+						'DAY_TEXT'=>$dateHelper->showDaysRus($carGtoDay)
+					))
 				);
 			}
 			elseif ($carGtoDay == 0)
@@ -780,7 +656,9 @@ class MyCar
 				$arAlerts[] = array(
 					'COLOR' => 'red',
 					'TYPE' => 'gto',
-					'TEXT' => 'ВНИМАНИЕ! Сегодня последний день действия ГТО на автомобиле "'.$arCar['NAME'].'". Необходимо СРОЧНО пройти ГТО!'
+					'TEXT' => Loc::getPackMessage('icar','mycars_alert_gto_red',array(
+						'CAR_NAME'=>$arCar['NAME']
+					))
 				);
 			}
 			elseif ($carGtoDay < 0)
@@ -788,7 +666,9 @@ class MyCar
 				$arAlerts[] = array(
 					'COLOR' => 'red',
 					'TYPE' => 'gto',
-					'TEXT' => 'ВНИМАНИЕ! Необходимо СРОЧНО пройти ГТО на автомобиле "'.$arCar['NAME'].'". Езда без ГТО может привести к штрафу и лишению прав. Необходимо СРОЧНО пройти ГТО!'
+					'TEXT' => Loc::getPackMessage('icar','mycars_alert_gto_red2',array(
+						'CAR_NAME'=>$arCar['NAME']
+					))
 				);
 			}
 
