@@ -10,11 +10,19 @@ if (!isset($_POST['step']))
 		$fuelID = intval($_REQUEST['id']);
 	?>
 
-		<form method="post" action="" name="delete_fuel">
+		<form class="form-horizontal" role="form" name="fuel_delete" method="post" action="">
 			<input type="hidden" name="step" value="1">
 			<input type="hidden" name="fuel_id" value="<?=$fuelID?>">
-			<p><input class="check_confirm" type="checkbox" name="confirm" value="1">&nbsp;<?=Loc::getPackMessage('icar','fuel_confirm_delete',array('ID'=>$fuelID))?></p>
-			<input class="delete_submit" type="submit" name="submit_delete_car" value="<?=Loc::getPackMessage('icar','all_delete')?>">
+			<div class="form-group">
+				<div class="col-sm-offset-2 col-sm-10">
+					<input class="check_confirm" type="checkbox" name="confirm" value="1">&nbsp;<?=Loc::getPackMessage('icar','all_delete_confirm',array('ID'=>$fuelID))?>
+				</div>
+			</div>
+			<div class="form-group">
+				<div class="col-sm-offset-2 col-sm-10">
+					<button type="submit" class="delete_submit submit btn btn-success"><?=Loc::getPackMessage('icar','all_delete')?></button>
+				</div>
+			</div>
 		</form>
 		<script type="text/javascript">
 			$(document).on("ready",function(){
@@ -41,16 +49,16 @@ else
 		$res = Lib\Fuel::deleteFuel(intval($_POST['fuel_id']));
 		if ($res)
 		{
-			?><p><?=Loc::getPackMessage('icar','fuel_delete_success')?></p><?
+			?><div class="text-success"><?=Loc::getPackMessage('icar','all_delete_success')?></div><?
 		}
 		else
 		{
-			?><p><?=Loc::getPackMessage('icar','fuel_delete_error')?></p><?
+			?><div class="text-danger"><?=Loc::getPackMessage('icar','all_delete_error')?></div><?
 		}
 	}
 	else
 	{
-		?><p><?=Loc::getPackMessage('icar','fuel_delete_error')?></p><?
+		?><div class="text-danger"><?=Loc::getPackMessage('icar','all_delete_error')?></div><?
 	}
 }
 ?>

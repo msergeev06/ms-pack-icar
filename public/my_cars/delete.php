@@ -19,11 +19,23 @@ if (!isset($_POST['step']))
 		{
 			?>
 
-			<form method="post" action="" name="delete_car">
+			<form class="form-horizontal" role="form" method="post" action="" name="delete_car">
 				<input type="hidden" name="step" value="1">
 				<input type="hidden" name="car_id" value="<?=$carID?>">
-				<p><input class="check_confirm" type="checkbox" name="confirm" value="1">&nbsp;<?=Loc::getPackMessage('icar','mycars_car_confirm_delete',array('CAR_NAME'=>$carInfo['NAME'],'CAR_NUMBER'=>$carInfo['CAR_NUMBER']))?></p>
-				<input class="delete_submit" type="submit" name="submit_delete_car" value="<?=Loc::getPackMessage('icar','mycars_button_car_delete')?>">
+				<div class="form-group">
+					<div class="col-sm-offset-2 col-sm-10">
+						<div class="checkbox">
+							<label>
+								<input class="check_confirm" type="checkbox" name="confirm" value="1">&nbsp;<?=Loc::getPackMessage('icar','mycars_car_confirm_delete',array('CAR_NAME'=>$carInfo['NAME'],'CAR_NUMBER'=>$carInfo['CAR_NUMBER']))?>
+							</label>
+						</div>
+					</div>
+				</div>
+				<div class="form-group">
+					<div class="col-sm-offset-2 col-sm-10">
+						<button type="submit" class="submit btn btn-danger delete_submit"><?=Loc::getPackMessage('icar','mycars_button_car_delete')?></button>
+					</div>
+				</div>
 			</form>
 			<script type="text/javascript">
 				$(document).on("ready",function(){
@@ -51,11 +63,11 @@ else
 		$res = Lib\MyCar::deleteCar(intval($_POST['car_id']));
 		if ($res)
 		{
-			?><p><?=Loc::getPackMessage('icar','mycars_car_del_success')?></p><?
+			?><div class="text-success"><?=Loc::getPackMessage('icar','mycars_car_del_success')?></div><?
 		}
 		else
 		{
-			?><p><?=Loc::getPackMessage('icar','mycars_car_del_error')?></p><?
+			?><div class="text-danger"><?=Loc::getPackMessage('icar','mycars_car_del_error')?></div><?
 		}
 	}
 	else

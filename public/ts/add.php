@@ -1,8 +1,24 @@
-<? include_once(__DIR__."/../include/header.php"); MSergeev\Core\Lib\Buffer::setTitle(MSergeev\Core\Lib\Loc::getPackMessage('icar','ts_title')." - ".MSergeev\Core\Lib\Loc::getPackMessage('icar','ts_title_add'));
-
+<? include_once(__DIR__."/../include/header.php");
 use MSergeev\Packages\Icar\Lib;
 use MSergeev\Core\Lib\Options;
-use MSergeev\Core\Lib\Loc;
+use MSergeev\Core\Lib as CoreLib;
+
+CoreLib\Buffer::setTitle(CoreLib\Loc::getPackMessage('icar','ts_title')." - ".CoreLib\Loc::getPackMessage('icar','ts_title_add'));
+
+if (isset($_POST['action']) && intval($_POST['action'])==1)
+{
+	if (Lib\Ts::addFromPost($_POST)) {
+		echo '<span class="ok">'.CoreLib\Loc::getPackMessage('icar','ts_add_success').'</span>';
+		CoreLib\Buffer::setRefresh(CoreLib\Loader::getSitePublic('icar').'ts/',3);
+	}
+	else {
+		echo '<span class="err">'.CoreLib\Loc::getPackMessage('icar','all_add_error')
+			.":<br>"
+			.Lib\Errors::showErrorList()
+			.'</span>';
+	}
+}
+
 
 if (isset($_REQUEST['car']) && intval($_REQUEST['car'])>0)
 {
@@ -13,79 +29,38 @@ else
 	$carID = Lib\MyCar::getDefaultCarID();
 }
 
-$lastTs = Options::getOptionInt('icar_last_ts_'.$carID);
-$lastExecutor = Options::getOptionInt('icar_last_executor_'.$carID);
-$lastPoint = Options::getOptionInt('icar_last_executor_'.$carID.'_point');
-
-if (isset($_POST['action']) && intval($_POST['action'])==1)
+if (!$lastTs = Options::getOptionInt('icar_last_ts_'.$carID))
 {
-	if (Lib\Ts::addTsFromPost($_POST)) {
-		echo '<span class="ok">'.Loc::getPackMessage('icar','ts_add_success').'</span>';
-	}
-	else {
-		echo '<span class="err">'.Loc::getPackMessage('icar','ts_add_error').'</span>';
-	}
+	$lastTs = 'null';
 }
+if (!$lastExecutor = Options::getOptionInt('icar_last_executor_'.$carID))
+{
+	$lastExecutor = 'null';
+}
+if (!$lastPoint = Options::getOptionInt('icar_last_executor_'.$carID.'_point'))
+{
+	$lastPoint = 'null';
+}
+
 //msDebug(Lib\Odo::getMaxOdo($carID));
 ?>
-<form action="" method="post">
-	<table class="add_ts">
-		<tr>
-			<td class="title"><?=Loc::getPackMessage('icar','ts_car')?></td>
-			<td><? echo Lib\MyCar::showSelectCars("my_car",$carID,'class="myCar"'); ?></td>
-		</tr>
-		<tr>
-			<td class="title"><?=Loc::getPackMessage('icar','ts_num')?></td>
-			<td><? echo Lib\Ts::showSelectTsNum("ts_num",$lastTs); ?></td>
-		</tr>
-		<tr>
-			<td class="title"><?=Loc::getPackMessage('icar','ts_date')?></td>
-			<td><?=InputCalendar ('date', date('d.m.Y'), 'class="calendarDate"', $strId="")?></td>
-		</tr>
-		<tr>
-			<td class="title"><?=Loc::getPackMessage('icar','ts_executor')?></td>
-			<td><?=Lib\Ts::showSelectExecutor("executor",$lastExecutor)?></td>
-		</tr>
-		<tr>
-			<td class="title"><?=Loc::getPackMessage('icar','ts_cost')?></td>
-			<td><?=InputType('text','cost','','',false,'','class="cost"')?></td>
-		</tr>
-		<tr>
-			<td class="title"><?=Loc::getPackMessage('icar','ts_odo')?></td>
-			<td><?=InputType('text','odo','','',false,'','class="odo"')?></td>
-		</tr>
-		<tr>
-			<td class="title"><?=Loc::getPackMessage('icar','ts_point')?></td>
-			<td><? echo Lib\Points::showSelectPoints("ts_point",$lastPoint,'class="ts_point"')?></td>
-		</tr>
-		<tr>
-			<td class="center" colspan="2">или</td>
-		</tr>
-		<tr>
-			<td class="title"><?=Loc::getPackMessage('icar','ts_new_point_name')?></td>
-			<td><?=InputType('text','newpoint_name','','',false,'','class="newpoint_name"')?></td>
-		</tr>
-		<tr>
-			<td class="title"><?=Loc::getPackMessage('icar','ts_new_point_address')?></td>
-			<td><?=InputType('text','newpoint_address','','',false,'','class="newpoint_address"')?></td>
-		</tr>
-		<tr>
-			<td class="title"><?=Loc::getPackMessage('icar','ts_new_point_lat')?></td>
-			<td><?=InputType('text','newpoint_lat','','',false,'','class="newpoint_lat"')?></td>
-		</tr>
-		<tr>
-			<td class="title"><?=Loc::getPackMessage('icar','ts_new_point_lon')?></td>
-			<td><?=InputType('text','newpoint_lon','','',false,'','class="newpoint_lon"')?></td>
-		</tr>
-		<tr>
-			<td class="title"><?=Loc::getPackMessage('icar','ts_comment')?></td>
-			<td><?=InputType('text','comment','','',false,'','class="comment"')?></td>
-		</tr>
-		<tr>
-			<td class="center" colspan="2"><input type="hidden" name="action" value="1"><input type="submit" value="<?=Loc::getPackMessage('icar','ts_add')?>"></td>
-		</tr>
-	</table>
+<form class="form-horizontal" role="form" name="add_ts" method="post" action="">
+	<?=Lib\Fields::showCarIdField($carID)?>
+	<?=Lib\Fields::showTsField($lastTs)?>
+	<?=Lib\Fields::showDateField()?>
+	<?=Lib\Fields::showExecutorsField($lastExecutor)?>
+	<?=Lib\Fields::showCostField()?>
+	<?=Lib\Fields::showOdoField()?>
+	<?=Lib\Fields::showStartPointField($lastPoint,true,false,'',array('waypoint','service','other'))?>
+	<?=Lib\Fields::showCommentField()?>
+	<?//=Lib\Fields::showCheckField()?>
+	<input type="hidden" name="action" value="1">
+	<div class="form-group">
+		<div class="col-sm-offset-2 col-sm-10">
+			<button type="submit" class="submit btn btn-success"><?=CoreLib\Loc::getPackMessage('icar','all_add')?></button>
+		</div>
+	</div>
 </form>
 
 <? $curDir = basename(__DIR__); ?>
-<? include_once(MSergeev\Core\Lib\Loader::getPublic("icar")."include/footer.php"); ?>
+<? include_once(CoreLib\Loader::getPublic("icar")."include/footer.php"); ?>

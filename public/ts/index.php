@@ -24,12 +24,12 @@ else
 <?=Loc::getPackMessage('icar','ts_notice')?>
 
 <p>
-	<?=Loc::getPackMessage('icar','ts_statistic_for')?>: <? echo Lib\MyCar::showSelectCars("my_car",$carID,'class="myCar"'); ?><br>
-	<?=Loc::getPackMessage('icar','ts_total')?>: <?=Lib\Ts::getTotalMaintenanceCostsFormatted($carID)?> <?=Loc::getPackMessage('icar','ts_rub')?><br><br>
+	<?=Loc::getPackMessage('icar','all_statistic_for')?>: <? echo Lib\MyCar::showSelectCars("my_car",$carID,'class="myCar"'); ?><br>
+	<?=Loc::getPackMessage('icar','ts_total')?>: <?=Lib\Statistics::getTotalMaintenanceCostsFormatted($carID)?> <?=Loc::getPackMessage('icar','ts_rub')?><br><br>
 </p>
-<p><a href="add.php?car=<?=$carID?>"><?=Loc::getPackMessage('icar','ts_add')?></a><br><br></p>
+<p><a href="add.php?car=<?=$carID?>"><button type="button" class="btn btn-primary"><?=Loc::getPackMessage('icar','all_add')?></button></a><br><br></p>
 
 <? Lib\Ts::showListTable($carID); ?>
 
-<p><a href="add.php?car=<?=$carID?>"><?=Loc::getPackMessage('icar','ts_add')?></a></p>
+<p><br><br><a href="add.php?car=<?=$carID?>"><button type="button" class="btn btn-primary"><?=Loc::getPackMessage('icar','all_add')?></button></a></p>
 <? $curDir = basename(__DIR__); include_once(MSergeev\Core\Lib\Loader::getPublic("icar")."include/footer.php"); ?>

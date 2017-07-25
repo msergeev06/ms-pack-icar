@@ -13,7 +13,7 @@ use \MSergeev\Core\Lib\Loc;
 	</form></p>
 <?else:?>
 	<?
-	if ($res = Lib\Ts::deleteTs($_POST["ts_id"])) {
+	if ($res = Lib\Ts::deleteRecord($_POST["ts_id"])) {
 		?><span style="color: green;"><?=Loc::getPackMessage('icar','ts_delete_success')?></span><?
 	}
 	else {

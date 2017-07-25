@@ -1,7 +1,8 @@
-<? include_once(__DIR__."/../include/header.php"); MSergeev\Core\Lib\Buffer::setTitle(MSergeev\Core\Lib\Loc::getPackMessage('icar','ts_title')." - ".MSergeev\Core\Lib\Loc::getPackMessage('icar','ts_title_edit'));
-
+<? include_once(__DIR__."/../include/header.php");
 use MSergeev\Packages\Icar\Lib;
-use MSergeev\Core\Lib\Loc;
+use MSergeev\Core\Lib as CoreLib;
+
+CoreLib\Buffer::setTitle(CoreLib\Loc::getPackMessage('icar','ts_title')." - ".CoreLib\Loc::getPackMessage('icar','ts_title_edit'));
 
 if (isset($_REQUEST['id']) && intval($_REQUEST['id'])>0)
 {
@@ -14,70 +15,31 @@ else
 
 if (!isset($_POST["action"]))
 {
-	if (!$arTs = Lib\Ts::getTsList (NULL, $editID))
+	if (!$arTs = Lib\Ts::getList (NULL, $editID))
 	{
 		die("ERROR");
+	}
+	else
+	{
+		$arTs = $arTs[0];
 	}
 	//msDebug($arTs);
 	?>
 	<form action="" method="post">
-		<table class="add_ts">
-			<tr>
-				<td class="title"><?=Loc::getPackMessage('icar','ts_car')?></td>
-				<td><? echo Lib\MyCar::showSelectCars("my_car",$arTs[0]["MY_CAR_ID"],'class="myCar"'); ?></td>
-			</tr>
-			<tr>
-				<td class="title"><?=Loc::getPackMessage('icar','ts_num')?></td>
-				<td><? echo Lib\Ts::showSelectTsNum("ts_num",$arTs[0]["TS_NUM"]); ?></td>
-			</tr>
-			<tr>
-				<td class="title"><?=Loc::getPackMessage('icar','ts_date')?></td>
-				<td><?=InputCalendar ('date', $arTs[0]["DATE"], 'class="calendarDate"', $strId="")?></td>
-			</tr>
-			<tr>
-				<td class="title"><?=Loc::getPackMessage('icar','ts_executor')?></td>
-				<td><?=Lib\Ts::showSelectExecutor("executor",$arTs[0]["EXECUTORS_ID"])?></td>
-			</tr>
-			<tr>
-				<td class="title"><?=Loc::getPackMessage('icar','ts_cost')?></td>
-				<td><?=InputType('text','cost',$arTs[0]["COST"],'',false,'','class="cost"')?></td>
-			</tr>
-			<tr>
-				<td class="title"><?=Loc::getPackMessage('icar','ts_odo')?></td>
-				<td><?=InputType('text','odo',$arTs[0]["ODO"],'',false,'','class="odo"')?></td>
-			</tr>
-			<tr>
-				<td class="title"><?=Loc::getPackMessage('icar','ts_point')?></td>
-				<td><? echo Lib\Points::showSelectPoints("ts_point",$arTs[0]["POINTS_ID"],'class="ts_point"')?></td>
-			</tr>
-			<tr>
-				<td class="center" colspan="2"><?=Loc::getPackMessage('icar','ts_or')?></td>
-			</tr>
-			<tr>
-				<td class="title"><?=Loc::getPackMessage('icar','ts_new_point_name')?></td>
-				<td><?=InputType('text','newpoint_name','','',false,'','class="newpoint_name"')?></td>
-			</tr>
-			<tr>
-				<td class="title"><?=Loc::getPackMessage('icar','ts_new_point_address')?></td>
-				<td><?=InputType('text','newpoint_address','','',false,'','class="newpoint_address"')?></td>
-			</tr>
-			<tr>
-				<td class="title"><?=Loc::getPackMessage('icar','ts_new_point_lat')?></td>
-				<td><?=InputType('text','newpoint_lat','','',false,'','class="newpoint_lat"')?></td>
-			</tr>
-			<tr>
-				<td class="title"><?=Loc::getPackMessage('icar','ts_new_point_lon')?></td>
-				<td><?=InputType('text','newpoint_lon','','',false,'','class="newpoint_lon"')?></td>
-			</tr>
-			<tr>
-				<td class="title"><?=Loc::getPackMessage('icar','ts_comment')?></td>
-				<td><?=InputType('text','comment',$arTs[0]["INFO"],'',false,'','class="comment"')?></td>
-			</tr>
+		<table class="table_form">
+			<?=Lib\Fields::showCarIdField($arTs["MY_CAR_ID"])?>
+			<?=Lib\Fields::showTsField($arTs["TS_NUM"])?>
+			<?=Lib\Fields::showDateField($arTs["DATE"])?>
+			<?=Lib\Fields::showExecutorsField($arTs["EXECUTORS_ID"])?>
+			<?=Lib\Fields::showCostField($arTs["COST"])?>
+			<?=Lib\Fields::showOdoField($arTs["ODO"])?>
+			<?=Lib\Fields::showStartPointField($arTs["POINTS_ID"])?>
+			<?=Lib\Fields::showCommentField($arTs["INFO"])?>
 			<tr>
 				<td class="center" colspan="2">
 					<input type="hidden" name="action" value="1">
 					<input type="hidden" name="edit_id" value="<?=$editID?>">
-					<input type="submit" value="<?=Loc::getPackMessage('icar','all_edit')?>">
+					<input type="submit" value="<?=CoreLib\Loc::getPackMessage('icar','all_edit')?>">
 				</td>
 			</tr>
 		</table>
@@ -86,13 +48,12 @@ if (!isset($_POST["action"]))
 <?
 }
 else {
-	$arPost = $_POST;
-	//msDebug($arPost);
-	if ($res = Lib\Ts::updateTsFromPost(intval($arPost['edit_id']),$arPost)) {
-		?><span style="color: green;"><?=Loc::getPackMessage('icar','ts_edit_success')?></span><?
+	if ($res = Lib\Ts::updateFromPost(intval($_POST['edit_id']),$_POST)) {
+		?><span style="color: green;"><?=CoreLib\Loc::getPackMessage('icar','ts_edit_success')?></span><?
+		CoreLib\Buffer::setRefresh(CoreLib\Loader::getSitePublic('icar').'ts/',3);
 	}
 	else {
-		?><span style="color: red;"><?=Loc::getPackMessage('icar','ts_edit_error')?></span><?
+		?><span style="color: red;"><?=CoreLib\Loc::getPackMessage('icar','ts_edit_error')?></span><?
 	}
 	//echo "<pre>"; print_r($arPost); echo "</pre>";
 }

@@ -10,16 +10,32 @@ a.selected {
 	text-decoration: underline !important;
 }
 
-.car_add {
+.table_form {
 	width: 100%;
 	border: 0;
 }
-.error {
-	color: darkred;
+.name {
+	text-align: right;
+}
+.value {
+	text-align: left;
 }
 .ok {
 	color: darkgreen;
 }
+.err, .error {
+	color: darkred;
+}
+.warning {
+	color: darkorange;
+}
+.table_button
+{
+	min-width: 20px;
+	min-height: 20px;
+}
+
+
 
 h1,h2,h3,h4,h5 {
 	margin: auto;
@@ -45,4 +61,9 @@ table {
 .cardetailinfo {
 	width: 100%;
 
+}
+
+
+.form-control {
+	max-width: 400px !important;
 }

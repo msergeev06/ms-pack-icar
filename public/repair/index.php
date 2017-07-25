@@ -7,16 +7,15 @@ $carID = (isset($_REQUEST['carID'])?intval($_REQUEST['carID']):Lib\MyCar::getDef
 //msDebug();
 
 ?>
-<p>В данном разделе Вы можете указывать все расходы на ремонтные работы (Покраска, диагностика, регулировка, шиномонтаж).<br>
-	Запчасти для проведения ремонта указывайте в разделе "<a href="<?=$path?>repair_parts/">Запчасти</a>".</p>
+<p><?=Loc::getPackMessage('icar','repair_info')?></p>
 
-<p>Информация для: <? echo Lib\MyCar::showSelectCars("my_car",$carID,'class="myCar"'); ?><br>
-Всего расходов на ремонт: <? echo Lib\Repair::getTotalRepairCostsFormatted(); ?> <?=Loc::getPackMessage('icar','rp_rub')?><br><br></p>
-<p><a href="add.php?car=<?=$carID?>">Добавить запись</a><br><br></p>
+<p><?=Loc::getPackMessage('icar','all_statistic_for')?>: <? echo Lib\MyCar::showSelectCars("my_car",$carID,'class="myCar"'); ?><br>
+<?=Loc::getPackMessage('icar','repair_sum')?>: <? echo Lib\Statistics::getRepairTotalCostsFormatted($carID); ?> <?=Loc::getPackMessage('icar','all_rub')?><br><br></p>
+<p><a href="add.php?car=<?=$carID?>"><?=Loc::getPackMessage('icar','all_add')?></a><br><br></p>
 
-<?// Lib\RepairParts::showListTable($carID); ?>
+<? Lib\Repair::showListTable($carID); ?>
 
-<p><a href="add.php?car=<?=$carID?>">Добавить запись</a><br><br></p>
+<p><a href="add.php?car=<?=$carID?>"><?=Loc::getPackMessage('icar','all_add')?></a><br><br></p>
 
 
 

@@ -21,14 +21,14 @@ else
 	$page = intval($_REQUEST['page']);
 }
 ?>
-<p><?=Loc::getPackMessage('icar','fuel_statistic_for')?>: <? echo Lib\MyCar::showSelectCars("my_car",$carID,'class="myCar"'); ?><br>
-<?=Loc::getPackMessage('icar','fuel_total_cost')?>: <? echo Lib\Fuel::getTotalFuelCostsFormatted($carID); ?> руб.<br>
-<?=Loc::getPackMessage('icar','fuel_average')?>: <? echo Lib\MyCar::getCarAverageFuelFormatted($carID); ?> л./100км.<br>
-<?=Loc::getPackMessage('icar','fuel_total')?>: <? echo Lib\MyCar::getCarTotalSpentFuelFormatted($carID); ?> л.<br><br></p>
-<p><a href="add.php?car=<?=$carID?>"><?=Loc::getPackMessage('icar','fuel_add')?></a><br><br></p>
+<p><?=Loc::getPackMessage('icar','all_statistic_for')?>: <?=Lib\MyCar::showSelectCars("my_car",$carID,'class="myCar"')?><br>
+<?=Loc::getPackMessage('icar','fuel_total_cost')?>: <?=Lib\Statistics::getCarTotalCostsFormatted($carID,array('fuel'))?><br>
+<?=Loc::getPackMessage('icar','fuel_average')?>: <?=Lib\Statistics::getCarAverageFuelFormatted($carID)?><br>
+<?=Loc::getPackMessage('icar','fuel_total')?>: <?=Lib\Statistics::getCarTotalSpentFuelFormatted($carID)?><br><br></p>
+<p><a href="add.php?car=<?=$carID?>"><button type="button" class="btn btn-primary"><?=Loc::getPackMessage('icar','all_add')?></button></a><br><br></p>
 
 <? Lib\Fuel::showListTable($carID); ?>
 
-<p><a href="add.php?car=<?=$carID?>"><?=Loc::getPackMessage('icar','fuel_add')?></a><br><br></p>
+<p><br><br><a href="add.php?car=<?=$carID?>"><button type="button" class="btn btn-primary"><?=Loc::getPackMessage('icar','all_add')?></button></a><br><br></p>
 <? $curDir = basename(__DIR__); ?>
 <? include_once(MSergeev\Core\Lib\Loader::getPublic("icar")."include/footer.php"); ?>
