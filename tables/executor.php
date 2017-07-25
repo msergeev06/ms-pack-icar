@@ -73,7 +73,7 @@ class ExecutorTable extends DataManager {
 			),
 			array(
 				'ID' => 5,
-				'NAME' => 'Частный сеовис',
+				'NAME' => 'Частный сервис',
 				'CODE' => 'service',
 				'SORT' => 50
 			)

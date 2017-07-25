@@ -6,21 +6,26 @@ use MSergeev\Core\Lib\DataManager;
 use MSergeev\Core\Entity;
 use MSergeev\Core\Lib\TableHelper;
 
-class FuelmarkTable extends DataManager {
-	public static function getTableName () {
+class FuelmarkTable extends DataManager
+{
+	public static function getTableName ()
+	{
 		return 'ms_icar_fuelmark';
 	}
-	public static function getTableTitle () {
+	public static function getTableTitle ()
+	{
 		return 'Типы топлива';
 	}
-	public static function getTableLinks() {
+	public static function getTableLinks()
+	{
 		return array(
 			'ID' => array(
 				'ms_icar_fuel' => 'FUELMARK_ID'
 			)
 		);
 	}
-	public static function getMap () {
+	public static function getMap ()
+	{
 		return array(
 			new Entity\IntegerField ('ID', array(
 				'primary' => true,
