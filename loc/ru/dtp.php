@@ -9,5 +9,5 @@
  */
 
 return array(
-	'dtp_not_select' => 'Не выбрано'
+	'not_select' => '[ALL_NOT_SELECT]'
 );

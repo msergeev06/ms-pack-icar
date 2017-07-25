@@ -1,4 +1,13 @@
 <?php
+/**
+ * MSergeev\Packages\Icar\Lib\Ts
+ * Прохождение ТО
+ *
+ * @package MSergeev\Packages\Icar
+ * @subpackage Lib
+ * @author Mikhail Sergeev <msergeev06@gmail.com>
+ * @copyright 2016 Mikhail Sergeev
+ */
 
 namespace MSergeev\Packages\Icar\Lib;
 
@@ -9,20 +18,76 @@ use MSergeev\Packages\Icar\Tables;
 use MSergeev\Core\Lib as CoreLib;
 use MSergeev\Core\Exception;
 
+/**
+ * Class Ts
+ *
+ * Events:
+ * OnBeforeAddNewTs - Перед добавлением записи о прохождении ТО (массив полей записи)
+ * OnAfterAddNewTs - После добавления записи о прохождении ТО (массив полей записи, ID добавленной записи)
+ * OnBeforeUpdateTs - Перед изменением записи о прохождении ТО (массив изменяемых полей, ID записи)
+ * OnAfterUpdateTs - После изменения записи о прохождении ТО (массив измененных полей, ID измененной записи)
+ * OnBeforeDeleteTs - Перед удалением записи о прохождении ТО (ID удаляемой записи)
+ * OnAfterDeleteTs - После попытки удаления записи о прохождении ТО (ID удаляемой записи, флаг успешности удаления)
+ */
 class Ts
 {
+	/**
+	 * @var array Массив возвращаемых из таблицы полей
+	 */
+	private static $arTableFields = array(
+		'ID',
+		'TS_NUM',
+		'MY_CAR_ID',
+		'MY_CAR_ID.NAME' => 'MY_CAR_NAME',
+		'MY_CAR_ID.CAR_NUMBER' => 'MY_CAR_NUMBER',
+		'DATE',
+		'EXECUTORS_ID',
+		'EXECUTORS_ID.NAME' => "EXECUTORS_NAME",
+		'EXECUTORS_ID.CODE' => "EXECUTORS_CODE",
+		'COST',
+		'ODO',
+		'POINTS_ID',
+		'POINTS_ID.NAME' => 'POINT_NAME',
+		'POINTS_ID.LATITUDE' => 'POINT_LATITUDE',
+		'POINTS_ID.LONGITUDE' => 'POINT_LONGITUDE',
+		'POINTS_ID.POINT_TYPES_ID' => 'POINT_TYPE_ID',
+		'POINTS_ID.POINT_TYPES_ID.NAME' => 'POINT_TYPE_NAME',
+		'DESCRIPTION' => 'INFO'
+	);
+	/**
+	 * @var int Максимальное число ТО в списке
+	 */
 	protected static $maxTsSelect = 25;
+
+	/**
+	 * Возвращает общую сумму расходов на ТО для автомобиля
+	 *
+	 * @api
+	 *
+	 * @param null|int $carID ID автомобиля, если null - будет выбран автомобиль по-умолчанию
+	 *
+	 * @uses MyCar::getDefaultCarID
+	 * @uses TsTable::getTableName
+	 * @uses MSergeev\Core\Lib\SqlHelper
+	 * @uses MSergeev\Core\Entity\Query
+	 * @uses MSergeev\Core\Lib\DBResult
+	 *
+	 * @return float
+	 */
 	public static function getTotalMaintenanceCosts ($carID=null)
 	{
 		if (is_null($carID))
 		{
 			$carID = MyCar::getDefaultCarID();
 		}
-		$helper = new SqlHelper();
+		$helper = new SqlHelper(Tables\TsTable::getTableName());
 		$query = new Query('select');
-		$sql = "SELECT\n\t".$helper->getSumFunction('COST','SUM')."\nFROM\n\t"
-			.$helper->wrapQuotes(Tables\TsTable::getTableName())."\nWHERE\n\t"
-			.$helper->wrapQuotes('MY_CAR_ID')." = ".$carID;
+		$sql = "SELECT\n\t"
+			.$helper->getSumFunction('COST','SUM')."\n"
+			."FROM\n\t"
+			.$helper->wrapTableQuotes()."\n"
+			."WHERE\n\t"
+			.$helper->wrapFieldQuotes('MY_CAR_ID')." = ".$carID;
 		$query->setQueryBuildParts($sql);
 		$res = $query->exec();
 		if ($ar_res = $res->fetch())
@@ -31,16 +96,68 @@ class Ts
 		}
 		else
 		{
-			return 0;
+			return floatval(0);
 		}
 	}
 
-	public static function getTotalMaintenanceCostsFormatted($carID=null)
+	/**
+	 * Возвращает максимальное значение одометра из записей прохождения ТО
+	 *
+	 * @api
+	 *
+	 * @param int|null $carID ID автомобиля, если null - будет выбран автомобиль по-умолчанию
+	 *
+	 * @uses MyCar::getDefaultCarID
+	 * @uses TsTable::getTableName
+	 * @uses MSergeev\Core\Entity\Query
+	 * @uses MSergeev\Core\Lib\DBResult
+	 *
+	 * @return float
+	 */
+	public static function getMaxOdo ($carID=null)
 	{
-		return Main::moneyFormat(static::getTotalMaintenanceCosts($carID));
+		if (is_null($carID))
+		{
+			$carID = MyCar::getDefaultCarID();
+		}
+
+		$helper = new SqlHelper(Tables\TsTable::getTableName());
+		$query = new Query('select');
+		$sql = "SELECT\n\t"
+			.$helper->getMaxFunction('ODO','MAX_ODO')."\n"
+			."FROM\n\t"
+			.$helper->wrapTableQuotes()."\n"
+			."WHERE\n\t"
+			.$helper->wrapFieldQuotes('MY_CAR_ID')." = ".$carID;
+		$query->setQueryBuildParts($sql);
+		$res = $query->exec();
+		if ($ar_res = $res->fetch())
+		{
+			if (isset($ar_res['MAX_ODO']))
+			{
+				return floatval($ar_res['MAX_ODO']);
+			}
+		}
+
+		return floatval(0);
 	}
 
-	public static function getTsList($carID=null,$getID=null,$limit=0,$offset=0)
+	/**
+	 * Возвращает список всех расходов на ТО для автомобиля, либо указанный
+	 *
+	 * @api
+	 *
+	 * @param null|int $carID   ID автомобиля, если null - будет выбран автомобиль по-умолчанию
+	 * @param null|int $getID   ID записи, если нужна только 1
+	 * @param int  $limit       Лимит вывода
+	 * @param int  $offset      Смещение вывода
+	 *
+	 * @uses MyCar::getDefaultCarID
+	 * @uses TsTable::getList
+	 *
+	 * @return array|bool
+	 */
+	public static function getList($carID=null,$getID=null,$limit=0,$offset=0)
 	{
 		if (is_null($carID))
 		{
@@ -58,26 +175,7 @@ class Ts
 		}
 
 		$arList = array(
-			'select' => array(
-				'ID',
-				'TS_NUM',
-				'MY_CAR_ID',
-				'MY_CAR_ID.NAME' => 'MY_CAR_NAME',
-				'MY_CAR_ID.CAR_NUMBER' => 'MY_CAR_NUMBER',
-				'DATE',
-				'EXECUTORS_ID',
-				'EXECUTORS_ID.NAME' => "EXECUTORS_NAME",
-				'EXECUTORS_ID.CODE' => "EXECUTORS_CODE",
-				'COST',
-				'ODO',
-				'POINTS_ID',
-				'POINTS_ID.NAME' => 'POINT_NAME',
-				'POINTS_ID.LATITUDE' => 'POINT_LATITUDE',
-				'POINTS_ID.LONGITUDE' => 'POINT_LONGITUDE',
-				'POINTS_ID.POINT_TYPES_ID' => 'POINT_TYPE_ID',
-				'POINTS_ID.POINT_TYPES_ID.NAME' => 'POINT_TYPE_NAME',
-				'DESCRIPTION' => 'INFO'
-			),
+			'select' => self::$arTableFields,
 			'filter' => $arFilter,
 			'order' => array(
 				'DATE' => 'ASC',
@@ -96,13 +194,33 @@ class Ts
 		//msDebug($arList);
 
 		$arRes = Tables\TsTable::getList($arList);
+		if ($arRes && intval($arList['limit'])==1 && isset($arRes[0]))
+		{
+			$arRes = $arRes[0];
+		}
 
 		return $arRes;
 	}
 
+	/**
+	 * Возвращает тег <select> со списком ТО
+	 *
+	 * @api
+	 *
+	 * @param int    $carID             ID автомобиля
+	 * @param string $strBoxName        Параметр name тега <select>
+	 * @param string $strDetText        Текст по-умолчанию (выбранный)
+	 * @param string $strSelectedVal    Выбранный пункт тега <select>
+	 * @param string $field1            Прочие параметры тега <select>
+	 *
+	 * @uses Ts::getList
+	 * @uses SelectBox
+	 *
+	 * @return string
+	 */
 	public static function showSelectTsList ($carID, $strBoxName, $strDetText='Не выбрано', $strSelectedVal = "null", $field1="class=\"tslistselect\"")
 	{
-		$arRes = self::getTsList($carID);
+		$arRes = self::getList($carID);
 		if ($arRes)
 		{
 			$arValue = array();
@@ -119,6 +237,23 @@ class Ts
 
 	}
 
+	/**
+	 * Возвращает html код таблицы записей о расходах на ТО
+	 *
+	 * @api
+	 *
+	 * @param null|int $carID ID автомобиля, если null - будет выбран автомобиль по-умолчанию
+	 *
+	 * @uses MyCar::getDefaultCarID
+	 * @uses Ts::getList
+	 * @uses IcarWebixHelper
+	 * @uses MSergeev\Core\Lib\DateHelper
+	 * @uses MSergeev\Core\Lib\Tools::getSitePath
+	 * @uses MSergeev\Core\Lib\Loader::getTemplate
+	 * @uses MSergeev\Core\Lib\Webix::showDataTable
+	 *
+	 * @return bool|void
+	 */
 	public static function showListTable ($carID=null)
 	{
 		if (is_null($carID))
@@ -126,7 +261,7 @@ class Ts
 			$carID = MyCar::getDefaultCarID();
 		}
 
-		$arList = static::getTsList($carID);
+		$arList = static::getList($carID);
 		if ($arList)
 		{
 			echo '<div id="tsList"></div><div id="tsPager"></div>';
@@ -153,8 +288,8 @@ class Ts
 					'point_type' => $list['POINT_TYPE_NAME'],
 					'info' => (strlen($list['INFO'])>0)?"<img src='".$imgSrcPath."info.png'>":"",
 					'comment' => $list['INFO'],
-					'edit' => "<a href='edit.php?id=".$list['ID']."'><img src='".$imgSrcPath."edit.png'></a>",
-					'delete' => "<a href='delete.php?id=".$list['ID']."'><img src='".$imgSrcPath."delete.png'></a>"
+					'edit' => "<a class='table_button' href='edit.php?id=".$list['ID']."'><img src='".$imgSrcPath."edit.png'></a>",
+					'delete' => "<a class='table_button' href='delete.php?id=".$list['ID']."'><img src='".$imgSrcPath."delete.png'></a>"
 				);
 			}
 
@@ -187,7 +322,8 @@ class Ts
 				'data' => $arDatas
 			);
 
-			return CoreLib\Webix::showDataTable($arData);
+			CoreLib\Webix::showDataTable($arData);
+			return true;
 		}
 		else
 		{
@@ -196,7 +332,21 @@ class Ts
 		}
 	}
 
-	public static function showSelectTsNum ($selectName, $selected = "null")
+	/**
+	 * Возвращает тег <select> со списком ТО
+	 *
+	 * @api
+	 *
+	 * @param string $selectName    Параметр name тега <select>
+	 * @param string $selected      Вариант, который будет выбран
+	 * @param string $field1        Дополнительные параметры <select>
+	 *
+	 * @uses Ts::$maxTsSelect
+	 * @uses SelectBox
+	 *
+	 * @return string
+	 */
+	public static function showSelectTsNum ($selectName, $selected = "null", $field1='')
 	{
 		$arValues = array();
 		for ($i=0; $i<=static::$maxTsSelect; $i++)
@@ -206,10 +356,24 @@ class Ts
 				'VALUE' => $i
 			);
 		}
-		return SelectBox($selectName,$arValues,"",$selected);
+		return SelectBox($selectName,$arValues,"",$selected,$field1);
 	}
 
-	public static function showSelectExecutor ($selectName, $selected = "null")
+	/**
+	 * Возвращает тег <select> со списком исполнителей работ
+	 *
+	 * @api
+	 *
+	 * @param string $selectName    Параметр name тега <select>
+	 * @param string $selected      Вариант, который будет выбран
+	 * @param string $field         Дополнительные параметры <select>
+	 *
+	 * @uses ExecutorTable::getList
+	 * @uses SelectBox
+	 *
+	 * @return string
+	 */
+	public static function showSelectExecutor ($selectName, $selected = "null", $field='')
 	{
 		$arValues = Tables\ExecutorTable::getList(array(
 			'select' => array(
@@ -221,10 +385,28 @@ class Ts
 				"NAME" => "ASC"
 			)
 		));
-		return SelectBox ($selectName,$arValues,"",$selected);
+		return SelectBox ($selectName,$arValues,"",$selected,$field);
 	}
 
-	public static function addTsFromPost ($post=null)
+	/**
+	 * Осуществляет проверку параметров формы добавления новой записи о расходах на ТО и добавляет запись
+	 *
+	 * @api
+	 *
+	 * @param null|array $post  Массив $_POST формы
+	 *
+	 * @uses Fields::validateFields
+	 * @uses MyCar::getDefaultCarID
+	 * @uses Errors::addError
+	 * @uses Errors::issetErrors
+	 * @uses Ts::addDB
+	 * @uses MSergeev\Core\Lib\Options::setOption
+	 *
+	 * @throws Exception\ArgumentNullException Если массив POST данных не задан
+	 *
+	 * @return bool|int
+	 */
+	public static function addFromPost (array $post=null)
 	{
 		try
 		{
@@ -240,110 +422,53 @@ class Ts
 		}
 
 		$arAdd = array();
-		if (!isset($post['my_car']) || intval($post['my_car'])<=0)
+		Fields::validateFields($post,$arAdd);
+		if (!isset($arAdd['MY_CAR_ID']))
 		{
 			$arAdd['MY_CAR_ID'] = MyCar::getDefaultCarID();
 		}
-		else
+
+		if (!isset($arAdd['TS_NUM']))
 		{
-			$arAdd['MY_CAR_ID'] = intval($post['my_car']);
-		}
-		if (!isset($post['ts_num']))
-		{
-			return false;
-		}
-		else
-		{
-			$arAdd['TS_NUM'] = intval($post['ts_num']);
-		}
-		if (!isset($post['date']) || !CoreLib\DateHelper::checkDate($post['date']))
-		{
-			return false;
-		}
-		else
-		{
-			if (!$arAdd['DATE'] = CoreLib\DateHelper::validateDate($post['date']))
-			{
-				return false;
-			}
-		}
-		if (!isset($post['executor']) || intval($post['executor'])<=0)
-		{
-			return false;
-		}
-		else
-		{
-			$arAdd['EXECUTORS_ID'] = intval($post['executor']);
-		}
-		if (!isset($post['cost']))
-		{
-			return false;
-		}
-		else
-		{
-			$post['cost'] = str_replace(" ","",$post['cost']);
-			$post['cost'] = str_replace(",",".",$post['cost']);
-			$post['cost'] = floatval($post['cost']);
-			$arAdd['COST'] = $post['cost'];
-		}
-		if (!isset($post['odo']))
-		{
-			return false;
-		}
-		else
-		{
-			$post['odo'] = str_replace(" ","",$post['odo']);
-			$post['odo'] = str_replace(",",".",$post['odo']);
-			$post['odo'] = floatval($post['odo']);
-			$arAdd['ODO'] = $post['odo'];
-		}
-		if (isset($post['ts_point']) && intval($post['ts_point'])>0)
-		{
-			$arAdd['POINTS_ID'] = intval($post['ts_point']);
-		}
-		else
-		{
-			if (isset($post['newpoint_address']) || (isset($post['newpoint_lat']) && isset($post['newpoint_lon'])))
-			{
-				$arPoint = array();
-				if (isset($post['newpoint_name']) && strlen($post['newpoint_name'])>3)
-				{
-					$arPoint['NAME'] = $post['newpoint_name'];
-				}
-				else
-				{
-					$arPoint['NAME'] = '[auto] Сервис';
-				}
-				if (isset($post['newpoint_address']) && strlen($post['newpoint_address'])>5)
-				{
-					$arPoint['ADDRESS'] = $post['newpoint_address'];
-				}
-				if (
-					(isset($post['newpoint_lat']) && strlen($post['newpoint_lat'])>2)
-					&& (isset($post['newpoint_lon']) && strlen($post['newpoint_lon'])>2)
-				)
-				{
-					$arPoint['LON'] = $post['newpoint_lon'];
-					$arPoint['LAT'] = $post['newpoint_lat'];
-				}
-				$arPoint['TYPE'] = Points::getPointTypeIdByCode('service');
-				$arAdd['POINTS_ID'] = Points::createNewPoint($arPoint);
-			}
-			else
-			{
-				return false;
-			}
-		}
-		if (isset($post['comment']) && strlen($post['comment'])>0)
-		{
-			$arAdd['DESCRIPTION'] = trim(htmlspecialchars($post['comment']));
+			Errors::addError('TS_NUM','Не указан номер ТО');
 		}
 
-		if ($addTsID = static::addTs($arAdd))
+		if (!isset($arAdd['DATE']))
 		{
-			CoreLib\Options::setOption('icar_last_ts_'.intval($arAdd['MY_CAR_ID']),$arAdd['TS_NUM']);
-			CoreLib\Options::setOption('icar_last_executor_'.intval($arAdd['MY_CAR_ID']),$arAdd['EXECUTORS_ID']);
-			CoreLib\Options::setOption('icar_last_executor_'.intval($arAdd['MY_CAR_ID']).'_point',$arAdd['POINTS_ID']);
+			Errors::addError('DATE','Неверный формат даты');
+		}
+
+		//TODO: Исправить поле на EXECUTOR_ID
+		if (!isset($arAdd['EXECUTOR_ID']))
+		{
+			Errors::addError('EXECUTOR_ID','Не указан исполнитель работ');
+		}
+		else
+		{
+			$arAdd['EXECUTORS_ID'] = $arAdd['EXECUTOR_ID'];
+			unset($arAdd['EXECUTOR_ID']);
+		}
+
+		if (!isset($arAdd['COST']))
+		{
+			$arAdd['COST'] = 0;
+		}
+
+		if (!isset($arAdd['POINTS_ID']))
+		{
+			Errors::addError('POINTS_ID','Не указана путевая точка');
+		}
+
+		if (Errors::issetErrors())
+		{
+			return false;
+		}
+
+		if ($addTsID = static::addDB($arAdd))
+		{
+			CoreLib\Options::setOption('icar_last_ts_'.$arAdd['MY_CAR_ID'],$arAdd['TS_NUM']);
+			CoreLib\Options::setOption('icar_last_executor_'.$arAdd['MY_CAR_ID'],$arAdd['EXECUTOR_ID']);
+			CoreLib\Options::setOption('icar_last_executor_'.$arAdd['MY_CAR_ID'].'_point',$arAdd['POINTS_ID']);
 			return $addTsID;
 		}
 		else
@@ -352,7 +477,159 @@ class Ts
 		}
 	}
 
-	protected static function addTs ($arAdd=null)
+	/**
+	 * Осуществляет проверку параметров формы редактирования записи о расходах на ТО и обновляет запись
+	 *
+	 * @api
+	 *
+	 * @param null|int      $tsID   ID редактируемой записи
+	 * @param null|array    $post   Массив новых значений
+	 *
+	 * @uses Fields::validateFields
+	 * @uses Ts::updateDB
+	 *
+	 * @throws Exception\ArgumentNullException Если ID изменяемой записи или массив изменяемых полей не заданы
+	 *
+	 * @return bool
+	 */
+	public static function updateFromPost ($tsID=null, $post=null)
+	{
+		try
+		{
+			if (is_null($tsID))
+			{
+				throw new Exception\ArgumentNullException('tsID');
+			}
+			if (is_null($post))
+			{
+				throw new Exception\ArgumentNullException('_POST');
+			}
+		}
+		catch (Exception\ArgumentNullException $e)
+		{
+			$e->showException();
+			return false;
+		}
+
+		//msDebug($post);
+
+		$arUpdate = array();
+		Fields::validateFields($post, $arUpdate);
+
+		if ($res = self::updateDB($tsID, $arUpdate))
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+
+	//TODO: Потестить удаление при связанных записях
+	/**
+	 * Удаляет запись о прохождении ТО
+	 *
+	 * @api
+	 *
+	 * @param null|int $tsID    ID удаляемой записи
+	 *
+	 * @uses TsTable::getTableName
+	 * @uses TsTable::getMapArray
+	 * @uses TsTable::getTableLinks
+	 * @uses MSergeev\Core\Lib\Events::getPackageEvents
+	 * @uses MSergeev\Core\Lib\Events::executePackageEvent
+	 * @uses MSergeev\Core\Entity\Query
+	 * @uses MSergeev\Core\Lib\DBResult
+	 *
+	 * @throws Exception\ArgumentNullException Если ID удаляемой записи не задан
+	 *
+	 * @return bool
+	 */
+	public static function deleteRecord ($tsID=null)
+	{
+		try
+		{
+			if (is_null($tsID))
+			{
+				throw new Exception\ArgumentNullException('tsID');
+			}
+		}
+		catch (Exception\ArgumentNullException $e)
+		{
+			$e->showException();
+			return false;
+		}
+
+		if ($arEvents = CoreLib\Events::getPackageEvents('icar','OnBeforeDeleteTs'))
+		{
+			foreach ($arEvents as $sort=>$ar_events)
+			{
+				foreach ($ar_events as $arEvent)
+				{
+					CoreLib\Events::executePackageEvent($arEvent,array(&$tsID));
+				}
+			}
+		}
+
+		$query = new Query('delete');
+		$query->setDeleteParams($tsID,
+			null,
+			Tables\TsTable::getTableName(),
+			Tables\TsTable::getMapArray(),
+			Tables\TsTable::getTableLinks()
+		);
+		$res = $query->exec();
+		if ($res->getResult())
+		{
+			if ($arEvents = CoreLib\Events::getPackageEvents('icar','OnAfterDeleteTs'))
+			{
+				foreach ($arEvents as $sort=>$ar_events)
+				{
+					foreach ($ar_events as $arEvent)
+					{
+						CoreLib\Events::executePackageEvent($arEvent,array($tsID,true));
+					}
+				}
+			}
+
+			return true;
+		}
+		else
+		{
+			if ($arEvents = CoreLib\Events::getPackageEvents('icar','OnAfterDeleteTs'))
+			{
+				foreach ($arEvents as $sort=>$ar_events)
+				{
+					foreach ($ar_events as $arEvent)
+					{
+						CoreLib\Events::executePackageEvent($arEvent,array($tsID,false));
+					}
+				}
+			}
+
+			return false;
+		}
+	}
+
+	/**
+	 * Добавляет новую запись в DB о расходах на ТО
+	 *
+	 * @param array $arAdd  Массив обработанных данных о прохождении ТО
+	 *
+	 * @uses TsTable::getTableName
+	 * @uses TsTable::getMapArray
+	 * @uses MSergeev\Core\Lib\Events::getPackageEvents
+	 * @uses MSergeev\Core\Lib\Events::executePackageEvent
+	 * @uses MSergeev\Core\Entity\Query
+	 * @uses MSergeev\Core\Lib\DBResult
+	 *
+	 * @throws Exception\ArgumentNullException Если массив POST данных не задан
+	 * @throws Exception\ArgumentTypeException Если вместо массива передан не массив
+	 *
+	 * @return bool|int
+	 */
+	protected static function addDB (array $arAdd=null)
 	{
 		try
 		{
@@ -375,6 +652,17 @@ class Ts
 		}
 		//msDebug($arAdd);
 
+		if ($arEvents = CoreLib\Events::getPackageEvents('icar','OnBeforeAddNewTs'))
+		{
+			foreach ($arEvents as $sort=>$ar_events)
+			{
+				foreach ($ar_events as $arEvent)
+				{
+					CoreLib\Events::executePackageEvent($arEvent,array(&$arAdd));
+				}
+			}
+		}
+
 		$query = new Query('insert');
 		$query->setInsertParams(
 			$arAdd,
@@ -384,6 +672,17 @@ class Ts
 		$res = $query->exec();
 		if ($res->getResult())
 		{
+			if ($arEvents = CoreLib\Events::getPackageEvents('icar','OnAfterAddNewTs'))
+			{
+				foreach ($arEvents as $sort=>$ar_events)
+				{
+					foreach ($ar_events as $arEvent)
+					{
+						CoreLib\Events::executePackageEvent($arEvent,array($arAdd,$res->getInsertId()));
+					}
+				}
+			}
+
 			return $res->getInsertId();
 		}
 		else
@@ -392,107 +691,24 @@ class Ts
 		}
 	}
 
-	public static function updateTsFromPost ($tsID=null, $post=null)
-	{
-		try
-		{
-			if (is_null($tsID))
-			{
-				throw new Exception\ArgumentNullException('tsID');
-			}
-			if (is_null($post))
-			{
-				throw new Exception\ArgumentNullException('_POST');
-			}
-		}
-		catch (Exception\ArgumentNullException $e)
-		{
-			$e->showException();
-			return false;
-		}
-
-		//msDebug($post);
-
-		$arUpdate = array();
-		if (isset($post['my_car']) || intval($post['my_car'])<=0)
-		{
-			$arUpdate['MY_CAR_ID'] = intval($post['my_car']);
-		}
-		if (isset($post['ts_num']))
-		{
-			$arUpdate['TS_NUM'] = intval($post['ts_num']);
-		}
-		if (isset($post['date']) && CoreLib\DateHelper::checkDate($post['date']))
-		{
-			$arUpdate['DATE'] = CoreLib\DateHelper::validateDate($post['date']);
-		}
-		if (isset($post['executor']) && intval($post['executor'])<=0)
-		{
-			$arUpdate['EXECUTORS_ID'] = intval($post['executor']);
-		}
-		if (isset($post['cost']))
-		{
-			$post['cost'] = str_replace(" ","",$post['cost']);
-			$post['cost'] = str_replace(",",".",$post['cost']);
-			$post['cost'] = floatval($post['cost']);
-			$arUpdate['COST'] = $post['cost'];
-		}
-		if (isset($post['odo']))
-		{
-			$post['odo'] = str_replace(" ","",$post['odo']);
-			$post['odo'] = str_replace(",",".",$post['odo']);
-			$post['odo'] = floatval($post['odo']);
-			$arUpdate['ODO'] = $post['odo'];
-		}
-		if (isset($post['ts_point']) && intval($post['ts_point'])>0)
-		{
-			$arUpdate['POINTS_ID'] = intval($post['ts_point']);
-		}
-		else
-		{
-			if (isset($post['newpoint_address']) || (isset($post['newpoint_lat']) && isset($post['newpoint_lon'])))
-			{
-				$arPoint = array();
-				if (isset($post['newpoint_name']) && strlen($post['newpoint_name'])>3)
-				{
-					$arPoint['NAME'] = $post['newpoint_name'];
-				}
-				else
-				{
-					$arPoint['NAME'] = '[auto] Сервис';
-				}
-				if (isset($post['newpoint_address']) && strlen($post['newpoint_address'])>5)
-				{
-					$arPoint['ADDRESS'] = $post['newpoint_address'];
-				}
-				if (
-					(isset($post['newpoint_lat']) && strlen($post['newpoint_lat'])>2)
-					&& (isset($post['newpoint_lon']) && strlen($post['newpoint_lon'])>2)
-				)
-				{
-					$arPoint['LON'] = $post['newpoint_lon'];
-					$arPoint['LAT'] = $post['newpoint_lat'];
-				}
-				$arPoint['TYPE'] = Points::getPointTypeIdByCode('service');
-				$arUpdate['POINTS_ID'] = Points::createNewPoint($arPoint);
-			}
-		}
-		if (isset($post['comment']) && strlen($post['comment'])>0)
-		{
-			$arUpdate['DESCRIPTION'] = trim(htmlspecialchars($post['comment']));
-		}
-
-		if ($res = static::updateTs($tsID, $arUpdate))
-		{
-			return true;
-		}
-		else
-		{
-			return false;
-		}
-	}
-
-	protected static function updateTs ($tsID=null, $arUpdate=null)
+	/**
+	 * Обновляет данный указанной записи о прохождении ТО
+	 *
+	 * @param null|int      $tsID       ID редактируемой записи
+	 * @param null|array    $arUpdate   Массив новых данных
+	 *
+	 * @uses TsTable::getList
+	 * @uses MSergeev\Core\Entity\Date
+	 * @uses MSergeev\Core\Lib\Events::getPackageEvents
+	 * @uses MSergeev\Core\Lib\Events::executePackageEvent
+	 * @uses MSergeev\Core\Entity\Query
+	 * @uses MSergeev\Core\Lib\DBResult
+	 *
+	 * @throws Exception\ArgumentNullException Если не указан ID изменяемой записи или массив изменяемых полей
+	 *
+	 * @return bool
+	 */
+	protected static function updateDB ($tsID=null, $arUpdate=null)
 	{
 		try
 		{
@@ -511,10 +727,16 @@ class Ts
 			return false;
 		}
 
-		$arCompare = Tables\TsTable::getList(array(
-			'filter' => array('ID'=>$tsID)
-		));
-		$arCompare = $arCompare[0];
+		$arCompare = Tables\TsTable::getList(
+			array(
+				'filter' => array('ID'=>$tsID),
+				'limit' => 1
+			)
+		);
+		if ($arCompare && isset($arCompare[0]))
+		{
+			$arCompare = $arCompare[0];
+		}
 		$date = new Date($arCompare['DATE'],'db');
 		$arCompare['DATE'] = $date->getDate("d.m.Y");
 		foreach ($arUpdate as $key=>$update)
@@ -531,6 +753,17 @@ class Ts
 		}
 		else
 		{
+			if ($arEvents = CoreLib\Events::getPackageEvents('icar','OnBeforeUpdateTs'))
+			{
+				foreach ($arEvents as $sort=>$ar_events)
+				{
+					foreach ($ar_events as $arEvent)
+					{
+						CoreLib\Events::executePackageEvent($arEvent,array(&$arUpdate,&$tsID));
+					}
+				}
+			}
+
 			$query = new Query('update');
 			$query->setUpdateParams(
 				$arUpdate,
@@ -542,47 +775,23 @@ class Ts
 
 			if ($res->getResult())
 			{
+				if ($arEvents = CoreLib\Events::getPackageEvents('icar','OnAfterUpdateTs'))
+				{
+					foreach ($arEvents as $sort=>$ar_events)
+					{
+						foreach ($ar_events as $arEvent)
+						{
+							CoreLib\Events::executePackageEvent($arEvent,array($arUpdate,$tsID));
+						}
+					}
+				}
+
 				return true;
 			}
 			else
 			{
 				return false;
 			}
-		}
-	}
-
-
-	//TODO: Потестить удаление при связанных записях
-	public static function deleteTs($tsID=null)
-	{
-		try
-		{
-			if (is_null($tsID))
-			{
-				throw new Exception\ArgumentNullException('tsID');
-			}
-		}
-		catch (Exception\ArgumentNullException $e)
-		{
-			$e->showException();
-			return false;
-		}
-
-		$query = new Query('delete');
-		$query->setDeleteParams($tsID,
-			null,
-			Tables\TsTable::getTableName(),
-			Tables\TsTable::getMapArray(),
-			Tables\TsTable::getTableLinks()
-		);
-		$res = $query->exec();
-		if ($res->getResult())
-		{
-			return true;
-		}
-		else
-		{
-			return false;
 		}
 	}
 

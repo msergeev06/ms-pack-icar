@@ -13,19 +13,23 @@ namespace MSergeev\Packages\Icar\Lib;
 
 use MSergeev\Core\Entity\Query;
 use MSergeev\Core\Exception;
-use MSergeev\Core\Lib\Loc;
-use MSergeev\Core\Lib\SqlHelper;
-use MSergeev\Core\Lib\DateHelper;
 use MSergeev\Packages\Icar\Tables\MyCarTable;
+use MSergeev\Core\Lib as CoreLib;
 
 /**
  * Class MyCar
- * @package MSergeev\Packages\Icar\Lib
  *
- * @var array $arCarField Структура полей таблицы автомобиля
+ * Events:
+ * OnBeforeAddNewCar - Перед добавлением нового автомобиля. Передается массив параметров
+ * OnAfterAddNewCar - После добавления нового автомобиля. Передается массив параметров и ID записи в DB
+ * OnBeforeUpdateCar - Перед изменением данных автомобиля. Передается массив изменяемых параметров и ID записи
+ * OnAfterUpdateCar - После изменения данных автомобился. Передается массив измененных параметров и ID записи
  */
 class MyCar
 {
+	/**
+     * @var array Структура полей таблицы автомобиля
+	 */
 	private static $arCarFields = array(
 		'ID',
 		'ACTIVE',
@@ -55,141 +59,136 @@ class MyCar
 		'CREDIT_COST',
 		'DATE_OSAGO_END',
 		'DATE_GTO_END',
+		'DATE_BUY',
+		'DATE_CELL',
 		'DEFAULT'
 	);
 
 	/**
-	 * Добавляет новый автомобиль
+	 * Добавляет новый автомобиль, обрабатывая данные из формы
 	 *
-	 * @api
+	 * @param array $arPost Массив POST данных
 	 *
-	 * @param array $arData Массив данных по автомобилю
+	 * @uses Fields::validateFields
+	 * @uses Errors::addError
+	 * @uses Errors::issetErrors
+	 * @uses CarModel::addNewModel
+	 * @uses MyCar::addNewCarDB
 	 *
-	 * @throw Exception\ArgumentNullException
-	 * @return \MSergeev\Core\Lib\DBResult
+	 * @throws Exception\ArgumentNullException если массив пуст
+	 *
+	 * @return bool|int
 	 */
-	public static function addNewCar($arData=array())
+	public static function addNewCarFromPost ($arPost=array())
 	{
 		try
 		{
-			if (empty($arData))
+			if (empty($arPost))
 			{
-				throw new Exception\ArgumentNullException('arData');
+				throw new Exception\ArgumentNullException('$arPost');
 			}
 		}
 		catch (Exception\ArgumentNullException $e)
 		{
-			$e->showException();
+			die($e->showException());
+		}
 
+		$arParams = array();
+		//Проверка полей
+		Fields::validateFields($arPost,$arParams);
+		if (!isset($arParams['NAME']))
+		{
+			Errors::addError('NAME','Не указано название автомобиля');
+		}
+
+		if (Errors::issetErrors())
+		{
 			return false;
 		}
 
-
-		$arMap = MyCarTable::getMapArray();
-		$arInsert = array();
-		foreach ($arMap as $field=>$obMap)
+		if (
+			!isset($arParams['CAR_MODEL_ID']) &&
+			isset($arParams['CAR_MODEL_TEXT']) &&
+			isset($arParams['CAR_BRANDS_ID'])
+		)
 		{
-			if (isset($arData[$field]))
+			if ($arParams['CAR_MODEL_ID'] = CarModel::addNewModel($arParams['CAR_BRANDS_ID'],$arParams['CAR_MODEL_TEXT']))
 			{
-				$arInsert[$field] = $arData[$field];
+				unset($arParams['CAR_MODEL_TEXT']);
+			}
+			else
+			{
+				unset($arParams['CAR_MODEL_ID']);
+				unset($arParams['CAR_MODEL_TEXT']);
 			}
 		}
 
-		if (isset($arInsert['DEFAULT']) && $arInsert['DEFAULT'])
+		if ($insertID = self::addNewCarDB($arParams))
 		{
-			static::uncheckDefaultAllCars();
+			return $insertID;
+		}
+		else
+		{
+			return false;
 		}
 
-		$query = new Query('insert');
-		$query->setInsertParams(
-			$arInsert,
-			MyCarTable::getTableName(),
-			MyCarTable::getMapArray()
-		);
-		$res = $query->exec();
-
-		return $res;
 	}
 
 	/**
-	 * Обновляет данне по автомобилю
+	 * Обновляет данные по автомобилю из формы
 	 *
-	 * @api
+	 * @param array $arPost Массив POST данных
 	 *
-	 * @param array $arData Массив обновляемых полей таблицы
+	 * @uses Fields::validateFields
+	 * @uses CarModel::addNewModel
+	 * @uses MyCar::updateCarDB
+	 * @uses MSergeev\Core\Lib\DBResult
 	 *
-	 * @throw Exception\ArgumentNullException
-	 *        Exception\ArgumentOutOfRangeException
-	 * @return \MSergeev\Core\Lib\DBResult
+	 * @return bool
 	 */
-	public static function editCar ($arData=array())
+	public static function updateCarFromPost ($arPost)
 	{
-		try
+		$arParams = array ();
+		//Проверка полей
+		Fields::validateFields($arPost,$arParams);
+
+		if (
+			!isset($arParams['CAR_MODEL_ID']) &&
+			isset($arParams['CAR_MODEL_TEXT']) &&
+			isset($arParams['CAR_BRANDS_ID'])
+		)
 		{
-			if (empty($arData))
+			if ($arParams['CAR_MODEL_ID'] = CarModel::addNewModel($arParams['CAR_BRANDS_ID'],$arParams['CAR_MODEL_TEXT']))
 			{
-				throw new Exception\ArgumentNullException('arData');
+				unset($arParams['CAR_MODEL_TEXT']);
+			}
+			else
+			{
+				unset($arParams['CAR_MODEL_ID']);
+				unset($arParams['CAR_MODEL_TEXT']);
 			}
 		}
-		catch (Exception\ArgumentNullException $e)
-		{
-			$e->showException();
 
+		$res = self::updateCarDB($arPost['car_id'], $arParams);
+		if ($res->getResult())
+		{
+			return true;
+		}
+		else
+		{
 			return false;
 		}
-
-		$arMap = MyCarTable::getMapArray();
-		$arUpdate = array();
-		foreach ($arData as $field=>$value)
-		{
-			try
-			{
-				if (isset($arMap[$field]))
-				{
-					$arUpdate[$field] = $arData[$field];
-				}
-				else
-				{
-					throw new Exception\ArgumentOutOfRangeException("arData[".$field."]");
-				}
-			}
-			catch (Exception\ArgumentOutOfRangeException $e)
-			{
-				$e->showException();
-			}
-		}
-
-		if (isset($arUpdate['DEFAULT']) && $arUpdate['DEFAULT'])
-		{
-			static::uncheckDefaultAllCars();
-		}
-
-		$query = new Query('update');
-		$query->setUpdateParams(
-			$arUpdate,
-			null,
-			MyCarTable::getTableName(),
-			MyCarTable::getMapArray()
-		);
-		if (isset($arUpdate['ID']) && intval($arUpdate['ID']) > 0)
-			$query->setUpdateParams(
-				null,
-				intval($arUpdate['ID'])
-			);
-		$res = $query->exec();
-
-		return $res;
 	}
 
 	/**
-	 * Проверяет можно ли удалить автомобиль,
-	 * т.е. нет ли данных, ссылающихся на данный автомобиль
+	 * Проверяет можно ли удалить автомобиль, т.е. нет ли данных, ссылающихся на данный автомобиль
 	 *
-	 * @api
+	 * @param int $carID ID автомобиля
 	 *
-	 * @param int $carID
+	 * @uses MyCarTable::checkTableLinks
 	 *
-	 * @throw Exception\ArgumentNullException
+	 * @throws Exception\ArgumentNullException если ID автомобиля меньше или равно 0
+	 *
 	 * @return bool
 	 */
 	public static function canDeleteCar ($carID=0)
@@ -215,6 +214,14 @@ class MyCar
 	 * Удаляет указанный автомобиль
 	 *
 	 * @param int $carID ID автомобиля
+	 *
+	 * @uses MyCarTable::getTableName
+	 * @uses MyCarTable::getMapArray
+	 * @uses MyCarTable::getTableLinks
+	 * @uses MSergeev\Core\Entity\Query
+	 * @uses MSergeev\Core\Lib\DBResult
+	 *
+	 * @throws Exception\ArgumentNullException если ID автомобиля меньше или равно 0
 	 *
 	 * @return array|bool
 	 */
@@ -255,13 +262,15 @@ class MyCar
 	/**
 	 * Снимает пометку "по-умолчанию" со всех автомобилей
 	 *
-	 * @api
+	 * @uses MyCarTable::getTableName
+	 * @uses MSergeev\Core\Lib\SqlHelper
+	 * @uses MSergeev\Core\Entity\Query
 	 *
 	 * @return \MSergeev\Core\Lib\DBResult
 	 */
 	public static function uncheckDefaultAllCars()
 	{
-		$helper = new SqlHelper(MyCarTable::getTableName());
+		$helper = new CoreLib\SqlHelper(MyCarTable::getTableName());
 		$query = new Query('update');
 		$sql = "UPDATE\n\t"
 			.$helper->wrapTableQuotes()
@@ -276,15 +285,16 @@ class MyCar
 	}
 
 	/**
-	 * Возвращает массив данных обо всех автомобилях
+	 * Возвращает массив данных обо всех автомобилях, либо о заданном
 	 *
-	 * @api
+	 * @param bool      $bActive    Флаг - выбирать только активные
+	 * @param null|int  $carID      ID автомобиля
 	 *
-	 * @param bool $bActive
+	 * @uses MyCarTable::getList
 	 *
 	 * @return array
 	 */
-	public static function getListCar ($bActive=true)
+	public static function getList ($bActive=true,$carID=null)
 	{
 		$arList = array(
 			'select' => self::$arCarFields,
@@ -294,114 +304,88 @@ class MyCar
 		{
 			$arList['filter'] = array('ACTIVE'=>true);
 		}
+		if (!is_null($carID) && intval($carID)>0)
+		{
+			$arList['filter'] = array_merge($arList['filter'],array('MY_CAR_ID'=>$carID));
+		}
 		$arResult = MyCarTable::getList($arList);
 
 		return $arResult;
 	}
 
 	/**
-	 * Подсчитывает общую сумму расходов по автомобилю
+	 * Возвращает количество дней владения автомобилем
 	 *
-	 * @api
+	 * @param int|null $carID ID автомобиля, если null - будет выбран автомобиль по-умолчанию
 	 *
-	 * @param int $carID
-	 *
-	 * @return float
-	 */
-	public static function getCarTotalCostsFormatted ($carID=null)
-	{
-		return Main::moneyFormat(Fuel::getTotalFuelCosts($carID));
-	}
-
-	/**
-	 * Подсчитывает средний расход топлива автомобиля
-	 *
-	 * @api
-	 *
-	 * @param int $carID
-	 *
-	 * @return float
-	 */
-	public static function getCarAverageFuelFormatted ($carID=null)
-	{
-		return Main::averageFormat(Fuel::getAverageFuelConsumption($carID));
-	}
-
-	/**
-	 * Возвращает отформатированное значение израсходованного топлива
-	 *
-	 * @api
-	 *
-	 * @param int $carID
-	 *
-	 * @return string
-	 */
-	public static function getCarTotalSpentFuelFormatted ($carID=null)
-	{
-		return Main::literFormat(Fuel::getCarTotalSpentFuel($carID));
-	}
-
-	/**
-	 * Подсчитывает общее количество израсходованного топлива
-	 *
-	 * TODO: Доделать или удалить
-	 *
-	 * @param int $carID
+	 * @uses MyCar::getDefaultCarID
+	 * @uses MyCar::getList
 	 *
 	 * @return int
 	 */
-	public static function getCarTotalSpentFuel ($carID=0)
+	public static function getOwnershipDays ($carID=null)
 	{
-		$spent = 0;
-
-		return $spent;
-	}
-
-	/**
-	 * Возвращает текущее значение пробега автомобиля
-	 *
-	 * @api
-	 *
-	 * @param int $carID
-	 *
-	 * @return int
-	 */
-	public static function getCarCurrentMileage ($carID=null)
-	{
-		$mileage = 0;
 		if (is_null($carID))
 		{
-			$carID = static::getDefaultCarID();
-		}
-		$routsOdo = floatval(Odo::getMaxOdo($carID));
-		if ($routsOdo > $mileage)
-		{
-			$mileage = $routsOdo;
+			$carID = self::getDefaultCarID();
 		}
 
-		return $mileage;
+		$carInfo = self::getList(true,$carID);
+		if (isset($carInfo[0]))
+		{
+			$carInfo = $carInfo[0];
+		}
+
+		return intval(((time()-strtotime($carInfo['DATE_BUY']))/(60*60*24)));
 	}
 
 	/**
-	 * Выводит отформатированное текщее значение пробега автомобиля
+	 * Возвращает количество месяцев владения автомобилем
 	 *
-	 * @api
+	 * @param int|null $carID ID автомобиля, если null - будет выбран автомобиль по-умолчанию
 	 *
-	 * @param int $carID
+	 * @uses MyCar::getOwnershipDays
 	 *
-	 * @return string
+	 * @return int
 	 */
-	public static function getCarCurrentMileageFormatted ($carID=null)
+	public static function getOwnershipMonths ($carID=null)
 	{
-		return Main::mileageFormat(static::getCarCurrentMileage ($carID));
+		$days = self::getOwnershipDays($carID);
+		if ($days>0)
+		{
+			return intval($days/30.4);
+		}
+
+		return 0;
+	}
+
+	/**
+	 * Возвращает количество лет владения автомобилем
+	 *
+	 * @param int|null $carID ID автомобиля, если null - будет выбран автомобиль по-умолчанию
+	 *
+	 * @uses MyCar::getOwnershipDays
+	 *
+	 * @return int
+	 */
+	public static function getOwnershipYears ($carID=null)
+	{
+		$days = self::getOwnershipDays($carID);
+		if ($days>0)
+		{
+			return intval($days/365);
+		}
+
+		return 0;
 	}
 
 	/**
 	 * Возвращает массив параметров указанного автомобиля
 	 *
-	 * @api
+	 * @param int|null $carID ID автомобиля, если null - будет выбран автомобиль по-умолчанию
 	 *
-	 * @param int $carID ID автомобиля. Если не указан - будет выбран автомобиль по-умолчанию
+	 * @uses MyCar::getDefaultCarID
+	 * @uses MyCarTable::getList
 	 *
 	 * @return array|bool
 	 */
@@ -417,17 +401,18 @@ class MyCar
 			'filter' => array('ID' => $carID),
 			'limit' => 1
 		));
-		if (isset($arResult[0]))
+		if ($arResult && isset($arResult[0]))
 		{
 			$arResult = $arResult[0];
 		}
+
 		return $arResult;
 	}
 
 	/**
 	 * Возвращает ID автомобиля по-умолчанию
 	 *
-	 * @api
+	 * @uses MyCarTable::getList
 	 *
 	 * @return bool|int
 	 */
@@ -441,9 +426,13 @@ class MyCar
 			),
 			'limit' => 1
 		));
-		if (isset($arRes[0]))
+		if ($arRes && isset($arRes[0]))
 		{
-			return $arRes[0]['ID'];
+			$arRes = $arRes[0];
+		}
+		if ($arRes)
+		{
+			return $arRes['ID'];
 		}
 		else
 		{
@@ -452,20 +441,21 @@ class MyCar
 	}
 
 	/**
-	 * Выводит тег <select>, содержащий список автомобилей
+	 * Выводит тег select, содержащий список автомобилей
 	 *
-	 * @api
+	 * @param string $strBoxName        Название тега select
+	 * @param mixed  $strSelectedVal    Значение по-умолчанию
+	 * @param string $field1            Прочие параметры тега select
 	 *
-	 * @param string $strBoxName        Название тега <select>
-	 * @param null   $strSelectedVal    Значение по-умолчанию
-	 * @param string $field1            Прочие параметры тега <select>
-	 * @use SelectBox() Функция вывода тега <select>
+	 * @uses MyCar::getList
+	 * @uses MyCar::getDefaultCarID
+	 * @uses SelectBox Функция вывода тега select
 	 *
 	 * @return string
 	 */
 	public static function showSelectCars ($strBoxName, $strSelectedVal = null, $field1="class=\"typeselect\"")
 	{
-		$arCars = static::getListCar();
+		$arCars = static::getList();
 		if (is_null($strSelectedVal))
 		{
 			$strSelectedVal = static::getDefaultCarID();
@@ -486,51 +476,60 @@ class MyCar
 	/**
 	 * Возвращает значение одометра автомобиля на момент покупки
 	 *
-	 * @api
+	 * @param null|int $carID ID автомобиля, если null - будет выбран автомобиль по-умолчанию
 	 *
-	 * @param null|int $carID ID автомобиля. Если не указан, будет выбран автомобиль по-умолчанию
+	 * @uses MyCar::getDefaultCarID
+	 * @uses MyCarTable::getList
 	 *
-	 * @return bool|float Значение одометра, либо false
+	 * @return bool|float Значение одометра
 	 */
 	public static function getBuyCarOdo ($carID=null)
 	{
 		if (is_null($carID))
 		{
-			$carID = MyCar::getDefaultCarID();
+			$carID = self::getDefaultCarID();
 		}
 
-		if ($arRes = MyCarTable::getList(array(
+		$arRes = MyCarTable::getList(array(
 			'select' => array('MILEAGE'),
-			'filter' => array('ID'=>$carID)
-		)))
+			'filter' => array('ID'=>$carID),
+			'limit' => 1
+		));
+		if ($arRes && isset($arRes[0]))
 		{
-			return floatval($arRes[0]['MILEAGE']);
+			$arRes = $arRes[0];
 		}
-		else
+		if ($arRes)
 		{
-			return false;
+			return floatval($arRes['MILEAGE']);
 		}
+
+		return 0;
 	}
 
 	/**
 	 * Функция проверяет необходимость прохождения ТО и продление страховки.
+	 *
 	 * Если находит - создает массив сообщений, которые потом выводятся на экран.
 	 *
-	 * @api
+	 * @uses MyCar::getList
+	 * @uses Odo::getCurrentMileage
+	 * @uses MSergeev\Core\Lib\DateHelper
+	 * @uses MSergeev\Core\Lib\Loc
 	 *
 	 * @return array Массив с напоминаниями
 	 */
 	public static function checkAlerts ()
 	{
 		$arAlerts = array();
-		$arCars = static::getListCar();
-		$dateHelper = new DateHelper();
+		$arCars = static::getList();
+		$dateHelper = new CoreLib\DateHelper();
 
 		$time = time();
 		foreach ($arCars as &$arCar)
 		{
 			//Проверка необходимости ТО
-			$arCar['CURRENT_MILEAGE'] = static::getCarCurrentMileage ($arCar['ID']);
+			$arCar['CURRENT_MILEAGE'] = Odo::getCurrentMileage ($arCar['ID']);
 			//echo 'CURRENT_MILEAGE ='.$arCar['CURRENT_MILEAGE']."<br>";
 			//echo 'count = floor(CURRENT_MILEAGE / INTERVAL_TS)<br>';
 			$count = floor($arCar['CURRENT_MILEAGE'] / $arCar['INTERVAL_TS']);
@@ -549,7 +548,7 @@ class MyCar
 				$arAlerts[] = array(
 					'COLOR' => 'green',
 					'TYPE' => 'odo',
-					'TEXT' => Loc::getPackMessage('icar','mycars_alert_ts_green',array(
+					'TEXT' => CoreLib\Loc::getPackMessage('icar','mycars_alert_ts_green',array(
 						'CAR_NAME'=>$arCar['NAME'],
 						'KM'=>$raznica
 					))
@@ -560,7 +559,7 @@ class MyCar
 				$arAlerts[] = array(
 					'COLOR' => 'yellow',
 					'TYPE' => 'odo',
-					'TEXT' => Loc::getPackMessage('icar','mycars_alert_ts_yellow',array(
+					'TEXT' => CoreLib\Loc::getPackMessage('icar','mycars_alert_ts_yellow',array(
 						'CAR_NAME'=>$arCar['NAME'],
 						'KM'=>$raznica
 					))
@@ -571,7 +570,7 @@ class MyCar
 				$arAlerts[] = array(
 					'COLOR' => 'red',
 					'TYPE' => 'odo',
-					'TEXT' => Loc::getPackMessage('icar','mycars_alert_ts_red',array(
+					'TEXT' => CoreLib\Loc::getPackMessage('icar','mycars_alert_ts_red',array(
 						'CAR_NAME'=>$arCar['NAME']
 					))
 				);
@@ -587,7 +586,7 @@ class MyCar
 				$arAlerts[] = array(
 					'COLOR' => 'green',
 					'TYPE' => 'osago',
-					'TEXT' => Loc::getPackMessage('icar','mycars_alert_osago_green',array(
+					'TEXT' => CoreLib\Loc::getPackMessage('icar','mycars_alert_osago_green',array(
 						'CAR_NAME'=>$arCar['NAME'],
 						'DAY_NUM'=>$carOsagoDay,
 						'DAY_TEXT'=>$dateHelper->showDaysRus($carOsagoDay)
@@ -599,7 +598,7 @@ class MyCar
 				$arAlerts[] = array(
 					'COLOR' => 'yellow',
 					'TYPE' => 'osago',
-					'TEXT' => Loc::getPackMessage('icar','mycars_alert_osago_yellow',array(
+					'TEXT' => CoreLib\Loc::getPackMessage('icar','mycars_alert_osago_yellow',array(
 						'CAR_NAME'=>$arCar['NAME'],
 						'DAY_NUM'=>$carOsagoDay,
 						'DAY_TEXT'=>$dateHelper->showDaysRus($carOsagoDay)
@@ -611,7 +610,7 @@ class MyCar
 				$arAlerts[] = array(
 					'COLOR' => 'red',
 					'TYPE' => 'osago',
-					'TEXT' => Loc::getPackMessage('icar','mycars_alert_osago_red',array(
+					'TEXT' => CoreLib\Loc::getPackMessage('icar','mycars_alert_osago_red',array(
 						'CAR_NAME'=>$arCar['NAME']
 					))
 				);
@@ -621,7 +620,7 @@ class MyCar
 				$arAlerts[] = array(
 					'COLOR' => 'red',
 					'TYPE' => 'osago',
-					'TEXT' => Loc::getPackMessage('icar','mycars_alert_osago_red2',array(
+					'TEXT' => CoreLib\Loc::getPackMessage('icar','mycars_alert_osago_red2',array(
 						'CAR_NAME'=>$arCar['NAME']
 					))
 				);
@@ -632,7 +631,7 @@ class MyCar
 				$arAlerts[] = array(
 					'COLOR' => 'green',
 					'TYPE' => 'gto',
-					'TEXT' => Loc::getPackMessage('icar','mycars_alert_gto_green',array(
+					'TEXT' => CoreLib\Loc::getPackMessage('icar','mycars_alert_gto_green',array(
 						'CAR_NAME'=>$arCar['NAME'],
 						'DAY_NUM'=>$carGtoDay,
 						'DAY_TEXT'=>$dateHelper->showDaysRus($carGtoDay)
@@ -644,7 +643,7 @@ class MyCar
 				$arAlerts[] = array(
 					'COLOR' => 'yellow',
 					'TYPE' => 'gto',
-					'TEXT' => Loc::getPackMessage('icar','mycars_alert_gto_yellow',array(
+					'TEXT' => CoreLib\Loc::getPackMessage('icar','mycars_alert_gto_yellow',array(
 						'CAR_NAME'=>$arCar['NAME'],
 						'DAY_NUM'=>$carGtoDay,
 						'DAY_TEXT'=>$dateHelper->showDaysRus($carGtoDay)
@@ -656,7 +655,7 @@ class MyCar
 				$arAlerts[] = array(
 					'COLOR' => 'red',
 					'TYPE' => 'gto',
-					'TEXT' => Loc::getPackMessage('icar','mycars_alert_gto_red',array(
+					'TEXT' => CoreLib\Loc::getPackMessage('icar','mycars_alert_gto_red',array(
 						'CAR_NAME'=>$arCar['NAME']
 					))
 				);
@@ -666,7 +665,7 @@ class MyCar
 				$arAlerts[] = array(
 					'COLOR' => 'red',
 					'TYPE' => 'gto',
-					'TEXT' => Loc::getPackMessage('icar','mycars_alert_gto_red2',array(
+					'TEXT' => CoreLib\Loc::getPackMessage('icar','mycars_alert_gto_red2',array(
 						'CAR_NAME'=>$arCar['NAME']
 					))
 				);
@@ -679,4 +678,189 @@ class MyCar
 
 		return $arAlerts;
 	}
+
+	/**
+	 * Добавляет новый автомобиль в DB
+	 *
+	 * @param array $arData Массив данных по автомобилю
+	 *
+	 * @uses MyCarTable::getMapArray
+	 * @uses MyCarTable::getTableName
+	 * @uses MSergeev\Core\Lib\Events::getPackageEvents
+	 * @uses MSergeev\Core\Entity\Query
+	 * @uses MSergeev\Core\Lib\DBResult
+	 *
+	 * @throw MSergeev\Core\Exception\\ArgumentNullException если массив данных пуст
+	 *
+	 * @return \MSergeev\Core\Lib\DBResult
+	 */
+	protected static function addNewCarDB($arData=array())
+	{
+		try
+		{
+			if (empty($arData))
+			{
+				throw new Exception\ArgumentNullException('arData');
+			}
+		}
+		catch (Exception\ArgumentNullException $e)
+		{
+			$e->showException();
+
+			return false;
+		}
+
+
+		$arMap = MyCarTable::getMapArray();
+		$arInsert = array();
+		foreach ($arMap as $field=>$obMap)
+		{
+			if (isset($arData[$field]))
+			{
+				$arInsert[$field] = $arData[$field];
+			}
+		}
+
+		if ($arEvents = CoreLib\Events::getPackageEvents('icar','OnBeforeAddNewCar'))
+		{
+			foreach ($arEvents as $sort=>$ar_events)
+			{
+				foreach ($ar_events as $arEvent)
+				{
+					CoreLib\Events::executePackageEvent($arEvent,array(&$arInsert));
+				}
+			}
+		}
+
+		if (isset($arInsert['DEFAULT']) && $arInsert['DEFAULT'])
+		{
+			static::uncheckDefaultAllCars();
+		}
+
+		$query = new Query('insert');
+		$query->setInsertParams(
+			$arInsert,
+			MyCarTable::getTableName(),
+			MyCarTable::getMapArray()
+		);
+		$res = $query->exec();
+
+		if ($res->getResult())
+		{
+			if ($arEvents = CoreLib\Events::getPackageEvents('icar','OnAfterAddNewCar'))
+			{
+				foreach ($arEvents as $sort=>$ar_events)
+				{
+					foreach ($ar_events as $arEvent)
+					{
+						CoreLib\Events::executePackageEvent($arEvent,array($arInsert,$res->getInsertId()));
+					}
+				}
+			}
+
+			return $res->getInsertId();
+		}
+		else
+		{
+			return false;
+		}
+	}
+
+	/**
+	 * Обновляет данные по автомобилю в DB
+	 *
+	 * @param int   $primary    ID обновляемого элемента
+	 * @param array $arData     Массив обновляемых полей таблицы
+	 *
+	 * @uses MyCarTable::getMapArray
+	 * @uses MyCarTable::getTableName
+	 * @uses MSergeev\Core\Lib\Events
+	 * @uses MSergeev\Core\Entity\Query
+	 *
+	 * @throw MSergeev\Core\Exception\ArgumentNullException
+	 * @throw MSergeev\Core\Exception\ArgumentOutOfRangeException
+	 *
+	 * @return \MSergeev\Core\Lib\DBResult
+	 */
+	protected static function updateCarDB ($primary, $arData=array())
+	{
+		try
+		{
+			if (empty($arData))
+			{
+				throw new Exception\ArgumentNullException('arData');
+			}
+		}
+		catch (Exception\ArgumentNullException $e)
+		{
+			$e->showException();
+
+			return false;
+		}
+
+		$arMap = MyCarTable::getMapArray();
+		$arUpdate = array();
+		foreach ($arData as $field=>$value)
+		{
+			try
+			{
+				if (isset($arMap[$field]))
+				{
+					$arUpdate[$field] = $arData[$field];
+				}
+				else
+				{
+					throw new Exception\ArgumentOutOfRangeException("arData[".$field."]");
+				}
+			}
+			catch (Exception\ArgumentOutOfRangeException $e)
+			{
+				$e->showException();
+			}
+		}
+
+		if ($arEvents = CoreLib\Events::getPackageEvents('icar','OnBeforeUpdateCar'))
+		{
+			foreach ($arEvents as $sort=>$ar_events)
+			{
+				foreach ($ar_events as $arEvent)
+				{
+					CoreLib\Events::executePackageEvent($arEvent,array(&$arUpdate,&$primary));
+				}
+			}
+		}
+
+		if (isset($arUpdate['DEFAULT']) && $arUpdate['DEFAULT'])
+		{
+			static::uncheckDefaultAllCars();
+		}
+
+		$query = new Query('update');
+		$query->setUpdateParams(
+			$arUpdate,
+			$primary,
+			MyCarTable::getTableName(),
+			MyCarTable::getMapArray()
+		);
+		if (isset($arUpdate['ID']) && intval($arUpdate['ID']) > 0)
+			$query->setUpdateParams(
+				null,
+				intval($arUpdate['ID'])
+			);
+		$res = $query->exec();
+
+		if ($arEvents = CoreLib\Events::getPackageEvents('icar','OnAfterUpdateCar'))
+		{
+			foreach ($arEvents as $sort=>$ar_events)
+			{
+				foreach ($ar_events as $arEvent)
+				{
+					CoreLib\Events::executePackageEvent($arEvent,array($arUpdate,$primary));
+				}
+			}
+		}
+
+		return $res;
+	}
+
 }

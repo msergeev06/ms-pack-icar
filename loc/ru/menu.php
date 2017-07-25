@@ -9,17 +9,19 @@
  */
 
 return array(
-	'menu_main'         => 'Главная',
-	'menu_cars'         => 'Мои машины',
-	'menu_mileage'      => 'Пробег',
-	'menu_ts'           => 'ТО',
-	'menu_fuel'         => 'Топливо',
-	'menu_repairparts'  => 'Запчасти',
-	'menu_repair'       => 'Ремонт',
-	'menu_parts'        => 'Дополнительное<br>оборудование',
-	'menu_credit'       => 'Кредит',
-	'menu_other'        => 'Прочее',
-	'menu_accident'     => 'ДТП',
-	'menu_income'       => 'Доход',
-	'menu_points'       => 'Путевые точки'
+	'main'         => 'Главная',
+	'cars'         => 'Машины',
+	'mileage'      => 'Пробег',
+	'ts'           => 'ТО',
+	'fuel'         => 'Топливо',
+	'repairparts'  => 'Запчасти',
+	'repair'       => 'Ремонт',
+	'parts'        => 'Доп. оборуд.',
+	'credit'       => 'Кредит',
+	'other'        => 'Прочее',
+	'accident'     => 'ДТП',
+	'income'       => 'Доход',
+	'points'       => 'Точки',
+	'setup'        => 'Настройки',
+	'setup_first'  => 'Умолчания'
 );

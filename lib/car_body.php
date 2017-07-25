@@ -16,7 +16,8 @@ use MSergeev\Core\Lib\Loc;
 
 /**
  * Class CarBody
- * @package MSergeev\Packages\Icar\Lib
+ *
+ * @static
  */
 class CarBody
 {
@@ -28,7 +29,9 @@ class CarBody
 	 * @param int    $selected  Значение option по-умолчанию
 	 * @param string $name      Название тега <select>
 	 *
-	 * @use SelectBox() Функция вывода тега <select>
+	 * @uses CarBodyTable::getList
+	 * @uses MSergeev\Core\Lib\Loc::getPackMessage
+	 * @uses SelectBox Функция вывода тега <select>
 	 *
 	 * @return string
 	 */
@@ -49,8 +52,8 @@ class CarBody
 		));
 
 		if ($selected>0)
-			return SelectBox($name,$arValues,Loc::getPackMessage('icar','all_select_default'),$selected);
+			return SelectBox($name,$arValues,Loc::getPackMessage('icar','all_select_default'),$selected,'class="form-control"');
 		else
-			return SelectBox($name,$arValues,Loc::getPackMessage('icar','all_select_default'));
+			return SelectBox($name,$arValues,Loc::getPackMessage('icar','all_select_default'),'null','class="form-control"');
 	}
 }

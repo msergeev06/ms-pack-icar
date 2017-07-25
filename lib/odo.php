@@ -12,17 +12,56 @@
 namespace MSergeev\Packages\Icar\Lib;
 
 use MSergeev\Core\Exception;
+use MSergeev\Core\Lib\Events;
+use MSergeev\Core\Lib\SqlHelper;
 use MSergeev\Packages\Icar\Tables;
 use MSergeev\Core\Entity\Query;
 use MSergeev\Core\Lib\Loc;
 use MSergeev\Core\Lib\DateHelper;
+use MSergeev\Core\Lib\Options;
 
 /**
  * Class Odo
- * @package MSergeev\Packages\Icar\Lib
+ *
+ * Events:
+ * OnBeforeAddNewRoute - Перед добавлением нового маршрута. Передается массив полей
+ * OnAfterAddNewRoute - После добавления нового маршрута. Передается массив полей и ID записи
  */
 class Odo
 {
+	/**
+	 * @var array Массив полей маршрута
+	 */
+	private static $arRoutsFields = array(
+		'ID',
+		'MY_CAR_ID',
+		'MY_CAR_ID.NAME'                        => 'MY_CAR_NAME',
+		'MY_CAR_ID.CAR_NUMBER'                  => 'MY_CAR_NUMBER',
+		'DATE',
+		'START_POINTS_ID',
+		'START_POINTS_ID.NAME'                  => 'START_POINT_NAME',
+		'START_POINTS_ID.POINT_TYPES_ID'        => 'START_POINT_TYPE_ID',
+		'START_POINTS_ID.POINT_TYPES_ID.NAME'   => 'START_POINT_TYPE_NAME',
+		'START_POINTS_ID.POINT_TYPES_ID.CODE'   => 'START_POINT_TYPE_CODE',
+		'START_POINTS_ID.ADDRESS'               => 'START_POINT_ADDRESS',
+		'START_POINTS_ID.LATITUDE'              => 'START_POINT_LATITUDE',
+		'START_POINTS_ID.LONGITUDE'             => 'START_POINT_LONGITUDE',
+		'START_POINTS_ID.RADIUS'                => 'START_POINT_RADIUS',
+		'START_POINTS_ID.POPULAR'               => 'START_POINT_POPULAR',
+		'END_START',
+		'END_POINTS_ID',
+		'END_POINTS_ID.NAME'                    => 'END_POINT_NAME',
+		'END_POINTS_ID.POINT_TYPES_ID'          => 'END_POINT_TYPE_ID',
+		'END_POINTS_ID.POINT_TYPES_ID.NAME'     => 'END_POINT_TYPE_NAME',
+		'END_POINTS_ID.POINT_TYPES_ID.CODE'     => 'END_POINT_TYPE_CODE',
+		'END_POINTS_ID.ADDRESS'                 => 'END_POINT_ADDRESS',
+		'END_POINTS_ID.LATITUDE'                => 'END_POINT_LATITUDE',
+		'END_POINTS_ID.LONGITUDE'               => 'END_POINT_LONGITUDE',
+		'END_POINTS_ID.RADIUS'                  => 'END_POINT_RADIUS',
+		'END_POINTS_ID.POPULAR'                 => 'END_POINT_POPULAR',
+		'ODO'
+	);
+
 	/**
 	 * Функция обрабатывает данные о маршруте из формы, для сохранении в БД
 	 *
@@ -30,9 +69,17 @@ class Odo
 	 *
 	 * @param array $post Массив $_POST с данными
 	 *
+	 * @uses Fields::validateFields
+	 * @uses MyCar::getDefaultCarID
+	 * @uses Errors::addError
+	 * @uses Errors::issetErrors
+	 * @uses Odo::addNewRoute
+	 *
+	 * @throws Exception\ArgumentNullException Если массив POST не задан
+	 *
 	 * @return bool|int
 	 */
-	public static function addNewRouteFromPost ($post=null)
+	public static function addNewRouteFromPost (array $post=null)
 	{
 		try
 		{
@@ -48,86 +95,39 @@ class Odo
 		}
 
 		$arData = array();
-		if (isset($post['my_car']))
-		{
-			$arData['MY_CAR_ID'] = intval($post['my_car']);
-		}
-		else
+		Fields::validateFields($post,$arData);
+		if (!isset($arData['MY_CAR_ID']))
 		{
 			$arData['MY_CAR_ID'] = MyCar::getDefaultCarID();
 		}
-		if (isset($post['date']))
-		{
-			$arData['DATE'] = $post['date'];
-		}
-		else
+
+		if (!isset($arData['DATE']))
 		{
 			$arData['DATE'] = date('d.m.Y');
 		}
-		if (isset($post['odo']))
+
+		if (isset($arData['POINTS_ID']))
 		{
-			$arData['ODO'] = $post['odo'];
-		}
-		if (isset($post['start_point']) && intval($post['start_point'])>0)
-		{
-			$arData['START_POINTS_ID'] = $post['start_point'];
+			$arData['START_POINTS_ID'] = $arData['POINTS_ID'];
+			unset($arData['POINTS_ID']);
 		}
 		else
 		{
-			$arPoint = array();
-			if (isset($post['start_name']) && strlen($post['start_name'])>3)
-			{
-				$arPoint['NAME'] = $post['start_name'];
-			}
-			if (isset($post['start_address']) && strlen($post['start_address'])>5)
-			{
-				$arPoint['ADDRESS'] = $post['start_address'];
-			}
-			if (
-				(isset($post['start_lat']) && strlen($post['start_lat'])>2)
-				&& (isset($post['start_lon']) && strlen($post['start_lon'])>2)
-			)
-			{
-				$arPoint['LON'] = $post['start_lon'];
-				$arPoint['LAT'] = $post['start_lat'];
-			}
-			$arPoint['TYPE'] = Points::getPointTypeIdByCode('waypoint');
-			$arData['START_POINTS_ID'] = Points::createNewPoint($arPoint);
+			Errors::addError('START_POINTS_ID','Не указана начальная путевая точка');
 		}
-		if (isset($post['end_start']) && intval($post['end_start'])==1)
+
+		if (!isset($arData['END_START']) || !$arData['END_START'])
 		{
-			$arData['END_START'] = true;
-		}
-		else
-		{
+			if (!isset($arData['END_POINTS_ID']))
+			{
+				Errors::addError('END_POINTS_ID','Не указана конечная путевая точка');
+			}
 			$arData['END_START'] = false;
-			if (isset($post['end_point']) && intval($post['end_point'])>0)
-			{
-				$arData['END_POINTS_ID'] = $post['end_point'];
-				$arData['end_point_num'] = true;
-			}
-			else
-			{
-				$arPoint = array();
-				if (isset($post['end_name']) && strlen($post['end_name'])>3)
-				{
-					$arPoint['NAME'] = $post['end_name'];
-				}
-				if (isset($post['end_address']) && strlen($post['end_address'])>5)
-				{
-					$arPoint['ADDRESS'] = $post['end_address'];
-				}
-				if (
-					(isset($post['end_lat']) && strlen($post['end_lat'])>2)
-					&& (isset($post['end_lon']) && strlen($post['end_lon'])>2)
-				)
-				{
-					$arPoint['LON'] = $post['end_lon'];
-					$arPoint['LAT'] = $post['end_lat'];
-				}
-				$arPoint['TYPE'] = Points::getPointTypeIdByCode('waypoint');
-				$arData['END_POINTS_ID'] = Points::createNewPoint($arPoint);
-			}
+		}
+
+		if (Errors::issetErrors())
+		{
+			return false;
 		}
 
 		return static::addNewRoute($arData);
@@ -136,13 +136,17 @@ class Odo
 	/**
 	 * Возвращает максимальное значение одометра на основе маршрутов
 	 *
-	 * TODO: Переписать запрос
-	 *
 	 * @api
 	 *
 	 * @param int $carID
 	 *
-	 * @return int
+	 * @uses MyCar::getDefaultCarID
+	 * @uses RoutsTable::getTableName
+	 * @uses MSergeev\Core\Lib\SqlHelper
+	 * @uses MSergeev\Core\Entity\Query
+	 * @uses MSergeev\Core\Lib\DBResult
+	 *
+	 * @return float
 	 */
 	public static function getMaxOdo ($carID=null)
 	{
@@ -151,33 +155,44 @@ class Odo
 			$carID = MyCar::getDefaultCarID();
 		}
 
-		$arRes = Tables\RoutsTable::getList(array(
-			'select' => array('ODO'),
-			'filter' => array(
-				'MY_CAR_ID' => intval($carID),
-				'>ODO' => 0
-			),
-			'order' => array('DATE'=>'DESC'),
-			'limit' => 1
-		));
-		if ($arRes)
+		$helper = new SqlHelper(Tables\RoutsTable::getTableName());
+
+		$query = new Query('select');
+		$sql = "SELECT\n\t"
+			.$helper->getMaxFunction('ODO','ODO')."\n"
+			."FROM\n\t"
+			.$helper->wrapTableQuotes()."\n"
+			."WHERE\n\t"
+			.$helper->wrapFieldQuotes('MY_CAR_ID')." = ".$carID;
+		$query->setQueryBuildParts($sql);
+		$res = $query->exec();
+		if ($ar_res = $res->fetch())
 		{
-			return $arRes[0]['ODO'];
+			return floatval($ar_res['ODO']);
 		}
 		else
 		{
-			return 0;
+			return floatval(0);
 		}
 	}
 
 	/**
 	 * Выводит график пройденного пути по дням для заданного временного промежутка
 	 *
-	 * @param string    $from       date
-	 * @param string    $to         date
-	 * @param int       $carID
-	 * @param string    $xTitle
-	 * @param string    $yTitle
+	 * @api
+	 *
+	 * @param string    $from       Начало временного промежутка
+	 * @param string    $to         Окончание временного промежутка
+	 * @param int|null  $carID      ID автомобиля, если null - будет выбрал автомобиль по-молчанию
+	 * @param string    $xTitle     Название оси X - если не указано, будет выбрано из файла локализации
+	 * @param string    $yTitle     Название оси Y - если не указано, будет выбрано из файла локализации
+	 *
+	 * @uses MyCar::getDefaultCarID
+	 * @uses MyCar::getCarByID
+	 * @uses OdoTable::getList
+	 * @uses MSergeev\Core\Lib\DateHelper
+	 * @uses MSergeev\Core\Lib\Loc::getPackMessage
+	 * @uses LineCharts Для отображения графика
 	 *
 	 * @return string
 	 */
@@ -244,11 +259,13 @@ class Odo
 				$dayOfWeek = $dateHelper->getDayOfWeekFromDate($ar_res['DATE']);
 				if ($dayOfWeek === 0 || $dayOfWeek === 6)
 				{
-					$name = '<span style="color: red;">'.$day." (".$dateHelper->getShortNameDayOfWeek($dayOfWeek).")</span>";
+					$name = '<span style="color: red;">'.$day." ".DateHelper::getNameMonthShort(intval($month))
+						." (".$dateHelper->getShortNameDayOfWeek($dayOfWeek).")</span>";
 				}
 				else
 				{
-					$name = $day." (".$dateHelper->getShortNameDayOfWeek($dayOfWeek).")";
+					$name = $day." ".DateHelper::getNameMonthShort(intval($month))
+						." (".$dateHelper->getShortNameDayOfWeek($dayOfWeek).")";
 				}
 				$arXAxis['NAME'][] = $name;
 				$arXAxis['VALUE'][] = floatval($ar_res['ODO']);
@@ -273,11 +290,206 @@ class Odo
 	}
 
 	/**
-	 * Функция добавляет новый машрут и возвращает ID записи, либо false
+	 * Функция возвращает текущий пробег, находя максимальную запись в разных таблицах
 	 *
 	 * @api
 	 *
-	 * @param array $arData
+	 * @param int|null  $carID  ID автомобиля, если null - будет выбрал автомобиль по-молчанию
+	 *
+	 * @uses MyCar::getDefaultCarID
+	 * @uses MyCar::getBuyCarOdo
+	 * @uses Fuel::getMaxOdo
+	 * @uses Odo::getMaxOdo
+	 * @uses RepairParts::getMaxOdo
+	 * @uses Ts::getMaxOdo
+	 *
+	 * @return float
+	 */
+	public static function getCurrentOdo ($carID=null)
+	{
+		if (is_null($carID))
+		{
+			$carID = MyCar::getDefaultCarID();
+		}
+
+		$mileage = MyCar::getBuyCarOdo($carID);
+
+		//Максимальный пробег в записях о заправках
+		$res = Fuel::getMaxOdo($carID);
+		if ($res>$mileage)
+		{
+			$mileage = $res;
+		}
+
+		//Максимальный пробег в записях о маршрутах
+		$res = self::getMaxOdo($carID);
+		if ($res>$mileage)
+		{
+			$mileage = $res;
+		}
+
+		//Максимальный пробег в записях о запчастях
+		$res = RepairParts::getMaxOdo($carID);
+		if ($res>$mileage)
+		{
+			$mileage = $res;
+		}
+
+		//Максимальный пробег в записях о прохождении ТО
+		$res = Ts::getMaxOdo($carID);
+		if ($res>$mileage)
+		{
+			$mileage = $res;
+		}
+
+		return round($mileage,2);
+	}
+
+	/**
+	 * Возвращает значение текущего пробега
+	 *
+	 * @api
+	 *
+	 * Не забываем, что значение пробега может отличаться от значения одометра
+	 *
+	 * @param int|null  $carID  ID автомобиля, если null - будет выбрал автомобиль по-молчанию
+	 *
+	 * @uses MyCar::getDefaultCarID
+	 * @uses Odo::getCurrentOdo
+	 * @uses MyCar::getBuyCarOdo
+	 *
+	 * @return float
+	 */
+	public static function getCurrentMileage ($carID=null)
+	{
+		if (is_null($carID))
+		{
+			$carID = MyCar::getDefaultCarID();
+		}
+
+		$odo = self::getCurrentOdo($carID);
+		$mileage = MyCar::getBuyCarOdo($carID);
+
+		return round(($odo-$mileage),2);
+	}
+
+	/**
+	 * Возвращает средний пробег в день
+	 *
+	 * @param int|null  $carID  ID автомобиля, если null - будет выбрал автомобиль по-молчанию
+	 *
+	 * @uses MyCar::getDefaultCarID
+	 * @uses Odo::getCurrentMileage
+	 * @uses MyCar::getOwnershipDays
+	 *
+	 * @return float
+	 */
+	public static function getAverageMileageDay ($carID=null)
+	{
+		if (is_null($carID))
+		{
+			$carID = MyCar::getDefaultCarID();
+		}
+
+		$mileage = self::getCurrentMileage($carID);
+		$days = MyCar::getOwnershipDays($carID);
+
+		if (intval($days)>0)
+		{
+			return round(($mileage/intval($days)),2);
+		}
+
+		return floatval(0);
+	}
+
+	/**
+	 * Возвращает средний пробег в месяц
+	 *
+	 * @param int|null  $carID  ID автомобиля, если null - будет выбрал автомобиль по-молчанию
+	 *
+	 * @uses MyCar::getDefaultCarID
+	 * @uses Odo::getCurrentMileage
+	 * @uses MyCar::getOwnershipDays
+	 *
+	 * @return float
+	 */
+	public static function getAverageMileageMonth ($carID=null)
+	{
+		if (is_null($carID))
+		{
+			$carID = MyCar::getDefaultCarID();
+		}
+
+		$mileage = self::getCurrentMileage($carID);
+		$days = MyCar::getOwnershipDays($carID);
+		if (intval($days)>0)
+		{
+			$month = $days / 30;
+			if (intval($month)>0)
+			{
+				return round(($mileage/$month),2);
+			}
+		}
+
+		return floatval(0);
+	}
+
+	/**
+	 * Возвращает список маршрутов
+	 *
+	 * @param int|null  $carID  ID автомобиля, если null - будет выбрал автомобиль по-молчанию
+	 * @param int       $limit  Лимит записей
+	 * @param int       $offset Смещение
+	 *
+	 * @uses MyCar::getDefaultCarID
+	 * @uses RoutsTable::getList
+	 *
+	 * @return array|bool
+	 */
+	public static function getListRouts ($carID=null, $limit=0, $offset=0)
+	{
+		if (is_null($carID))
+		{
+			$carID = MyCar::getDefaultCarID();
+		}
+		$arParams = array(
+			'select' => self::$arRoutsFields,
+			'filter' => array('MY_CAR_ID'=>$carID),
+			'order'  => array('DATE'=>'DESC')
+		);
+		if (intval($limit) > 0)
+		{
+			$arParams['limit'] = intval($limit);
+			if (intval($offset > 0))
+			{
+				$arParams['offset'] = intval($offset);
+			}
+		}
+		$arRes = Tables\RoutsTable::getList($arParams);
+		if ($arRes && intval($arParams['limit'])==1 && isset($arRes[0]))
+		{
+			$arRes = $arRes[0];
+		}
+
+		return $arRes;
+	}
+
+	/**
+	 * Функция добавляет новый машрут и возвращает ID записи, либо false
+	 *
+	 * @param array $arData Массив с даннымы нового маршрута
+	 *
+	 * @uses Points::increasePointPopular
+	 * @uses Odo::updateDayOdometer
+	 * @uses RoutsTable::getTableName
+	 * @uses RoutsTable::getMapArray
+	 * @uses MSergeev\Core\Lib\Events::getPackageEvents
+	 * @uses MSergeev\Core\Lib\Events::executePackageEvent
+	 * @uses MSergeev\Core\Entity\Query
+	 * @uses MSergeev\Core\Lib\DBResult
+	 * @uses MSergeev\Core\Lib\Options::setOption
+	 *
+	 * @throws Exception\ArgumentNullException Если массив данных не передан
 	 *
 	 * @return bool|int
 	 */
@@ -287,7 +499,7 @@ class Odo
 		{
 			if (empty($arData))
 			{
-				throw new Exception\ArgumentNullException('arNewRote');
+				throw new Exception\ArgumentNullException('$arData');
 			}
 		}
 		catch (Exception\ArgumentNullException $e)
@@ -306,6 +518,17 @@ class Odo
 			$bEndPoint = false;
 		}
 
+		if ($arEvents = Events::getPackageEvents('icar','OnBeforeAddNewRoute'))
+		{
+			foreach ($arEvents as $sort=>$ar_events)
+			{
+				foreach ($ar_events as $arEvent)
+				{
+					Events::executePackageEvent($arEvent,array(&$arData));
+				}
+			}
+		}
+
 		$query = new Query('insert');
 		$query->setInsertParams(
 			array(0=>$arData),
@@ -315,11 +538,31 @@ class Odo
 		$res = $query->exec();
 		if ($res->getResult())
 		{
+			if ($arEvents = Events::getPackageEvents('icar','OnAfterAddNewRoute'))
+			{
+				foreach ($arEvents as $sort=>$ar_events)
+				{
+					foreach ($ar_events as $arEvent)
+					{
+						Events::executePackageEvent($arEvent,array($arData,$res->getInsertId()));
+					}
+				}
+			}
+
+			if (!$arData['END_START'])
+			{
+				Options::setOption('icar_'.$arData['MY_CAR_ID'].'_last_point',$arData['END_POINTS_ID']);
+			}
+			else
+			{
+				Options::setOption('icar_'.$arData['MY_CAR_ID'].'_last_point',$arData['START_POINTS_ID']);
+			}
 			if ($bEndPoint)
 			{
 				Points::increasePointPopular($arData['END_POINTS_ID']);
 			}
 			static::updateDayOdometer($arData['MY_CAR_ID'],$arData['DATE']);
+
 			return $res->getInsertId();
 		}
 		else
@@ -331,10 +574,20 @@ class Odo
 	/**
 	 * Функция высчитывает данные о пройденном расстоянии от выбранной даты или за все время
 	 *
-	 * @api
+	 * @param int|null  $carID  ID автомобиля, если null - будет выбрал автомобиль по-молчанию
+	 * @param string    $date   Дата, с которой необходимо начинать пересчет
 	 *
-	 * @param int $carID
-	 * @param string $date
+	 * @uses MyCar::getDefaultCarID
+	 * @uses MyCar::getBuyCarOdo
+	 * @uses RoutsTable::getList
+	 * @uses OdoTable::getList
+	 * @uses OdoTable::getTableName
+	 * @uses OdoTable::getMapArray
+	 * @uses MSergeev\Core\Lib\DateHelper
+	 * @uses MSergeev\Core\Entity\Query
+	 * @uses Msergeev\Core\Entity\DBResult
+	 *
+	 * @return void
 	 */
 	protected static function updateDayOdometer($carID=null,$date=null)
 	{
@@ -422,6 +675,7 @@ class Odo
 				)
 			));
 			$arResult['MAX_DATE_ODO'] = array();
+			//TODO: Исправить ошибку: Warning: Invalid argument supplied for foreach() (при указании пробега = 0, если это первая поездка за день)
 			foreach ($arRes as $ar_res)
 			{
 				$arResult['ROUTS'][$ar_res['ID']]['DATE'] = $ar_res['DATE'];
@@ -483,7 +737,6 @@ class Odo
 			}
 		}
 
-		//TODO: Проверить работу кода
 		$arRes2 = Tables\OdoTable::getList(array(
 			'select' => array('ID','DATE','ODO'),
 			'filter' => array(
@@ -493,12 +746,14 @@ class Odo
 			'order' => array('DATE'=>'ASC')
 		));
 		$arResult['ODO_TABLE'] = array();
-		foreach ($arRes2 as $ar_res)
-		{
-			$arResult['ODO_TABLE'][$ar_res['DATE']] = array(
-				'ID' => $ar_res['ID'],
-				'ODO' => $ar_res['ODO']
-			);
+		if ($arRes2){
+			foreach ($arRes2 as $ar_res)
+			{
+				$arResult['ODO_TABLE'][$ar_res['DATE']] = array(
+					'ID' => $ar_res['ID'],
+					'ODO' => $ar_res['ODO']
+				);
+			}
 		}
 
 		$arResult['UPDATED'] = $arResult['INSERTED'] = array();
@@ -539,4 +794,8 @@ class Odo
 
 	}
 
+	//TODO: Добавить функцию обновления маршрута
+	//TODO: Добавить функцию удаления маршрута
+	//TODO: Добавить функцию вывода таблицы со списком маршрутов
+	//TODO: Добавить функцию получения списка маршрутов
 }

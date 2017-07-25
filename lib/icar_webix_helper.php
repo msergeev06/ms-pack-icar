@@ -16,13 +16,16 @@ use MSergeev\Core\Lib\Loc;
 
 /**
  * Class IcarWebixHelper
- * @package MSergeev\Packages\Icar\Lib
+ *
+ * @static
  * @extends MSergeev\Core\Lib\WebixHelper
  */
 class IcarWebixHelper extends CoreLib\WebixHelper
 {
 	/**
 	 * Конструктор. Добавляет используемые пакетом поля для таблицы в помощник
+	 *
+	 * @uses MSergeev\Core\Lib\Loc::getPackMessage
 	 */
 	public function __construct ()
 	{
@@ -46,25 +49,13 @@ class IcarWebixHelper extends CoreLib\WebixHelper
 				'tooltip' => '=false',
 				'header' => Loc::getPackMessage('icar','all_liters'),
 				'adjust'=>'=true',
-				'sort' => 'int',
-				'format' => '=webix.Number.numToStr({
-						groupDelimiter:" ",
-						groupSize:3,
-						decimalDelimiter:",",
-						decimalSize:2
-					})'
+				'sort' => 'int'
 			),
 			'LITER_COST' => array(
 				'id' => "liter_cost",
 				'tooltip' => '=false',
-				'header' => Loc::getPackMessage('icar','all_r_l'),
+				'header' => Loc::getPackMessage('icar','all_rub').'/'.Loc::getPackMessage('icar','all_l'),
 				'adjust'=>'=true',
-				'format' => '=webix.Number.numToStr({
-						groupDelimiter:" ",
-						groupSize:3,
-						decimalDelimiter:",",
-						decimalSize:2
-					})',
 				'sort' => 'int'
 			),
 			'LITER_COST_SUM' => array(
@@ -72,13 +63,7 @@ class IcarWebixHelper extends CoreLib\WebixHelper
 				'tooltip' => '=false',
 				'header' => Loc::getPackMessage('icar','all_sum'),
 				'adjust'=>'=true',
-				'sort' => 'int',
-				'format' => '=webix.Number.numToStr({
-						groupDelimiter:" ",
-						groupSize:3,
-						decimalDelimiter:",",
-						decimalSize:2
-				})'
+				'sort' => 'int'
 			),
 			'FULL' => array(
 				'id' => "full",
@@ -91,12 +76,6 @@ class IcarWebixHelper extends CoreLib\WebixHelper
 				'tooltip' => '=false',
 				'header' => Loc::getPackMessage('icar','all_expence'),
 				'adjust'=>'=true',
-				'format' => '=webix.Number.numToStr({
-						groupDelimiter:" ",
-						groupSize:3,
-						decimalDelimiter:",",
-						decimalSize:2
-					})',
 				'sort' => 'int'
 			),
 			'POINT' => array(
@@ -104,7 +83,8 @@ class IcarWebixHelper extends CoreLib\WebixHelper
 				'tooltip' => Loc::getPackMessage('icar','all_point_name').': #point_name#<br>'
 					.Loc::getPackMessage('icar','all_point_type').': #point_type#<br>'
 					.Loc::getPackMessage('icar','all_lat').': #point_latitude#<br>'
-					.Loc::getPackMessage('icar','all_lon').': #point_longitude#',
+					.Loc::getPackMessage('icar','all_lon').': #point_longitude#<br>'
+					.((CoreLib\Loader::issetPackage('yandexmap'))?Loc::getPackMessage('icar','all_map').':<br>#yandex_map#':''),
 				'header' => Loc::getPackMessage('icar','all_point'),
 				'adjust'=>'=true',
 				'sort' => 'string'
@@ -143,6 +123,13 @@ class IcarWebixHelper extends CoreLib\WebixHelper
 				'tooltip'=>'=false',
 				'adjust'=>'=true',
 			),
+			'REASON_REPLACEMENT' => array(
+				'id'=>'reason_replacement_name',
+				'header'=> Loc::getPackMessage('icar','all_executor'),
+				'sort'=>'string',
+				'tooltip'=>'=false',
+				'adjust'=>'=true',
+			),
 			'COST' => array(
 				'id'=>'cost',
 				'header'=> Loc::getPackMessage('icar','all_cost'),
@@ -159,7 +146,7 @@ class IcarWebixHelper extends CoreLib\WebixHelper
 			'SUM' => array(
 				'id'=>'sum',
 				'header'=>Loc::getPackMessage('icar','all_sum'),
-				'sort'=>'int',
+				'sort'=>'float',
 				'tooltip'=>'=false',
 				'format' => '=webix.Number.numToStr({
 						groupDelimiter:" ",
@@ -175,7 +162,27 @@ class IcarWebixHelper extends CoreLib\WebixHelper
 				'sort'=>'int',
 				'tooltip'=>'=false',
 				'adjust'=>'true'
-			)
+			),
+			'STRING' => array(
+				'id'=>'string',
+				'header'=> 'STRING',
+				'sort'=>'string',
+				'tooltip'=>'=false',
+				'adjust'=>'=true'
+			),
+			'BOOL' => array(
+				'id' => "bool",
+				'tooltip' => '=false',
+				'header' => 'BOOL',
+				'adjust'=>'=true'
+			),
+			'INT' => array(
+				'id'=>'int',
+				'header'=> 'INT',
+				'sort'=>'int',
+				'tooltip'=>'=false',
+				'adjust'=>'true'
+			),
 		);
 		$this->init();
 		$this->columnsValues = array_merge($this->columnsValues,$arConstruct);
