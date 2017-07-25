@@ -31,7 +31,18 @@ if (true)
 
 if ($bStatus)
 {
-	$arReturn['select'] = CarModel::getHtmlSelect($arParams['BRAND_ID']);
+	$arReturn['select'] = CarModel::getHtmlSelect($arParams['BRAND_ID'])
+		."<script>$('#car_model').on('change',function(){
+				var model_id = $(this).val();
+				if (model_id > 0)
+				{
+					$('.add_new_model').hide();
+				}
+				else
+				{
+					$('.add_new_model').show();
+				}
+			});</script>";
 }
 
 header('Content-Type: application/json');
