@@ -54,6 +54,11 @@ class PointsTable extends DataManager {
 			new Entity\StringField ('LONGITUDE', array(
 				'title' => 'Долгота'
 			)),
+			new Entity\FloatField('RADIUS',array(
+				'required' => true,
+				'default_value' => 500,
+				'title' => 'Радиус точки'
+			)),
 			new Entity\IntegerField ('POPULAR', array(
 				'required' => true,
 				'default_value' => 0,

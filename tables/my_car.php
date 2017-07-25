@@ -105,6 +105,12 @@ class MyCarTable extends DataManager {
 			new Entity\DateField ('DATE_GTO_END', array(
 				'title' => 'Дата окончания ГТО'
 			)),
+			new Entity\DateField('DATE_BUY',array(
+				'title' => 'Дата покупки'
+			)),
+			new Entity\DateField('DATE_CELL',array(
+				'title' => 'Дата продажи'
+			)),
 			new Entity\BooleanField ('DEFAULT', array(
 				'required' => true,
 				'default_value' => false,

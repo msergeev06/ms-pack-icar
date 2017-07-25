@@ -28,15 +28,20 @@ class OptionalEquipTable extends DataManager {
 				'required' => true,
 				'title' => 'Дата'
 			)),
+			new Entity\FloatField('COST',array(
+				'required' => true,
+				'default_value' => 0,
+				'title' => 'Цена'
+			)),
+			new Entity\FloatField('NUMBER',array(
+				'required' => true,
+				'default_value' => 1,
+				'title' => 'Количество'
+			)),
 			new Entity\FloatField('SUM',array(
 				'required' => true,
 				'default_value' => 0,
 				'title' => 'Сумма'
-			)),
-			new Entity\FloatField('NUM',array(
-				'required' => true,
-				'default_value' => 1,
-				'title' => 'Количество'
 			)),
 			new Entity\StringField('NAME',array(
 				'required' => true,

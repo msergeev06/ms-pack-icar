@@ -59,10 +59,10 @@ class FuelTable extends DataManager {
 				'default_value' => false,
 				'title' => 'Полный бак'
 			)),
-			new Entity\FloatField ('EXPENCE', array(
+			new Entity\BooleanField('MISSING',array(
 				'required' => true,
-				'default_value' => 0,
-				'title' => 'Расход'
+				'default_value' => false,
+				'title' => 'Была ли пропущена предыдущая заправка'
 			)),
 			new Entity\IntegerField ('POINTS_ID', array(
 				'required' => true,
@@ -71,6 +71,26 @@ class FuelTable extends DataManager {
 			)),
 			new Entity\TextField('DESCRIPTION', array(
 				'title' => 'Комментарий'
+			)),
+			new Entity\IntegerField('CHECK',array(
+				'size' => 18,
+				'link' => 'ms_core_file.ID',
+				'title' => 'Фотография чека'
+			)),
+			new Entity\FloatField ('EXPENCE', array(
+				'title' => 'Расход'
+			)),
+			new Entity\FloatField('DISTANCE',array(
+				'title' => 'Расстояние между заправками'
+			)),
+			new Entity\FloatField('COST_KM',array(
+				'title' => 'Стоимость за км.'
+			)),
+			new Entity\FloatField('TANK_LITER',array(
+				'title' => 'Литров в баке после заправки'
+			)),
+			new Entity\FloatField('TANK_COST',array(
+				'title' => 'Цена литра бензина в баке'
 			))
 		);
 	}

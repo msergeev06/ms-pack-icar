@@ -37,13 +37,18 @@ class OtherExpenseTable extends DataManager {
 				'required' => true,
 				'default_value' => 0,
 				'link' => 'ms_icar_flow_type.ID',
-				'title' => 'Тип расходв'
+				'title' => 'Тип расхода'
 			)),
 			new Entity\StringField('NAME',array(
 				'required' => true,
 				'title' => 'Название'
 			)),
-			new Entity\FloatField('NUM',array(
+			new Entity\FloatField('COST',array(
+				'required' => true,
+				'default_value' => 0,
+				'title' => 'Цена за единицу'
+			)),
+			new Entity\FloatField('NUMBER',array(
 				'required' => true,
 				'default_value' => 1,
 				'title' => 'Количество'
@@ -63,6 +68,11 @@ class OtherExpenseTable extends DataManager {
 			)),
 			new Entity\TextField('DESCRIPTION',array(
 				'title' => 'Примечание'
+			)),
+			new Entity\IntegerField('CHECK',array(
+				'size' => 18,
+				'link' => 'ms_core_file.ID',
+				'title' => 'Фотография чека'
 			))
 		);
 	}
